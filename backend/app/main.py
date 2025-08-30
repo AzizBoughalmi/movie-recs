@@ -12,6 +12,8 @@ from pydantic import BaseModel
 
 
 from core.recommender import MovieRecommender
+from core.profile_creator import ProfileCreator
+from models.profile import Profile
 
 # Configuration du logging pour FastAPI
 logging.basicConfig(
@@ -24,13 +26,22 @@ load_dotenv()
 
 app = FastAPI()
 
-# Créer une instance du MovieRecommender
+# Créer les instances des services
 movie_recommender = MovieRecommender()
+profile_creator = ProfileCreator()
 
-# Modèles Pydantic
+# Modèles Pydantic pour les requêtes
 class RecommendationRequest(BaseModel):
     favorites: list[str]
     query: Optional[str] = None
+
+class ProfileCreateRequest(BaseModel):
+    favorite_movies: list[str]
+
+
+class ProfileRecommendationRequest(BaseModel):
+    profile: Profile
+    custom_query: Optional[str] = None
 
 # CORS
 origins = ["http://localhost:5173"]
@@ -134,3 +145,78 @@ def get_recommendations(request: RecommendationRequest):
         logger.exception("Full error traceback:")
         
         return {"error": f"Erreur lors de la génération des recommandations: {str(e)}"}
+
+@app.post("/profile/create", response_model=Profile)
+def create_user_profile_api(request: ProfileCreateRequest):
+    """
+    Crée un profil cinématographique détaillé basé sur les films favoris de l'utilisateur
+    
+    Args:
+        request: Requête contenant les films favoris et le nom d'utilisateur
+    
+    Returns:
+        Profile: Profil cinématographique complet de l'utilisateur
+    """
+    logger.info(f"👤 API CALL - /profile/create")
+    logger.info(f"📝 Favorite movies: {request.favorite_movies}")
+
+    
+    start_time = time.time()
+    
+    try:
+        logger.info(f"🚀 Starting profile creation process...")
+        user_profile = profile_creator.create_user_profile(
+            favorite_movies=request.favorite_movies,
+  
+        )
+        
+        end_time = time.time()
+        logger.info(f"⏱️ Profile Creation Time: {end_time - start_time:.2f}s")
+        logger.info(f"✅ PROFILE CREATION SUCCESS")
+        logger.debug(f"📊 Profile created")
+        logger.debug(f"🎬 Favorite genres: {user_profile.favorite_genres}")
+        
+        return user_profile
+        
+    except Exception as e:
+        end_time = time.time()
+        logger.error(f"❌ PROFILE CREATION ERROR after {end_time - start_time:.2f}s")
+        logger.error(f"❌ Error details: {str(e)}")
+        logger.exception("Full error traceback:")
+        
+        return {"error": f"Erreur lors de la création du profil: {str(e)}"}
+
+@app.post("/recommendations/from-profile")
+def get_recommendations_from_profile(request: ProfileRecommendationRequest):
+    """
+    Génère des recommandations basées sur un profil utilisateur existant
+    
+    Args:
+        request: Requête contenant le profil utilisateur et une requête personnalisée optionnelle
+    
+    Returns:
+        Recommandations de films personnalisées basées sur le profil
+    """
+    logger.info(f"🎯 API CALL - /recommendations/from-profile")
+    logger.info(f"🎬 Profile genres: {request.profile.favorite_genres}")
+    logger.info(f"💭 Custom query: {request.custom_query}")
+    
+    start_time = time.time()
+    
+    try:
+        logger.info(f"🚀 Starting profile-based recommendation process...")
+
+        recommendations = movie_recommender.get_recommendations_from_profile(request.profile,request.custom_query)
+        end_time = time.time()
+        logger.info(f"⏱️ Profile-based Recommendation Time: {end_time - start_time:.2f}s")
+        logger.info(f"✅ PROFILE-BASED RECOMMENDATIONS SUCCESS")
+        
+        return recommendations
+        
+    except Exception as e:
+        end_time = time.time()
+        logger.error(f"❌ PROFILE-BASED RECOMMENDATIONS ERROR after {end_time - start_time:.2f}s")
+        logger.error(f"❌ Error details: {str(e)}")
+        logger.exception("Full error traceback:")
+        
+        return {"error": f"Erreur lors de la génération des recommandations basées sur le profil: {str(e)}"}

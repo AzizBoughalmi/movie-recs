@@ -7,13 +7,13 @@ class ProfileCreator:
     def __init__(self):
         self.ai_service = ai_service
     
-    def create_user_profile(self, favorite_movies: list[str], user_name: str = "Utilisateur") -> Profile:
+    def create_user_profile(self, favorite_movies: list[str], ) -> Profile:
         """
         Analyse les films favoris de l'utilisateur pour créer un profil cinématographique détaillé
         
         Args:
             favorite_movies: Liste des titres de films favoris de l'utilisateur
-            user_name: Nom de l'utilisateur (optionnel)
+
         
         Returns:
             Profile: Profil cinématographique détaillé de l'utilisateur
@@ -22,7 +22,7 @@ class ProfileCreator:
         profile_agent = self.ai_service.create_profile_agent(Profile)
         
         # Construire la requête d'analyse
-        user_query = f"""Analyse les films favoris de {user_name} pour créer son profil cinématographique : {', '.join(favorite_movies)}.
+        user_query = f"""Analyse mes films favoris de pour créer mon profil cinématographique : {', '.join(favorite_movies)}.
         
         Crée un profil détaillé qui inclut :
         - Les genres préférés
@@ -43,6 +43,6 @@ class ProfileCreator:
 profile_creator = ProfileCreator()
 
 # Fonction pour compatibilité avec l'ancien code
-def create_user_profile(favorite_movies: list[str], user_name: str = "Utilisateur") -> Profile:
+def create_user_profile(favorite_movies: list[str] ) -> Profile:
     """Fonction de compatibilité pour l'ancien code"""
-    return profile_creator.create_user_profile(favorite_movies, user_name)
+    return profile_creator.create_user_profile(favorite_movies)

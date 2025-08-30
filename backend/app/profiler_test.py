@@ -17,13 +17,13 @@ if __name__ == "__main__":
     
     # Films favoris de l'utilisateur
     favorite_movies = ["Fight club" , "shutter island"]
-    user_name = "John"
+    
     
     # Créer le profil utilisateur en utilisant la méthode de la classe
-    user_profile = profile_creator.create_user_profile(favorite_movies, user_name)
+    user_profile = profile_creator.create_user_profile(favorite_movies)
     
     # Afficher le profil
-    print(f"\n🎭 PROFIL CINÉMATOGRAPHIQUE DE {user_profile.user_name.upper()}")
+    print("\n🎭 PROFIL CINÉMATOGRAPHIQUE ")
     print("=" * 50)
     
     print(f"\n🎬 Genres favoris: {', '.join(user_profile.favorite_genres)}")

@@ -18,7 +18,6 @@ api_key = os.getenv('GEMINI_API_KEY')
 
 # Classe pour le profil utilisateur (output de l'agent profile_maker)
 class Profile(BaseModel):
-    user_name: str = "Utilisateur"
     favorite_genres: list[str] = []
     favorite_directors: list[str] = []
     favorite_actors: list[str] = []
@@ -30,7 +29,7 @@ class Profile(BaseModel):
     viewing_mood_preferences: list[str] = []
 
 
-def create_user_profile(favorite_movies: list[str], user_name: str = "Utilisateur") -> Profile:
+def create_user_profile(favorite_movies: list[str]) -> Profile:
     """
     Fonction qui analyse les films favoris de l'utilisateur pour créer un profil cinématographique détaillé.
     
@@ -108,7 +107,7 @@ def create_user_profile(favorite_movies: list[str], user_name: str = "Utilisateu
 if __name__ == "__main__":
     # Films favoris de l'utilisateur
     favorite_movies = [ " في عِزّ الظهر"]
-    user_name = "John"
+ 
     
     # Créer le profil utilisateur
     user_profile = create_user_profile(favorite_movies, user_name)

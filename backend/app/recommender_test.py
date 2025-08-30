@@ -22,18 +22,18 @@ if __name__ == "__main__":
     # Étape 1: Créer un profil utilisateur à partir de films favoris
     print("\n📝 ÉTAPE 1: Création du profil utilisateur")
     favorite_movies = ["Home Alone", "The mask", "shutter island", "the illusionist"]
-    user_name = "Alice"
+
     
-    print(f"Films favoris de {user_name}: {', '.join(favorite_movies)}")
+    print(f"Films favoris : {', '.join(favorite_movies)}")
     print("🔄 Création du profil en cours...")
     
     try:
         # Utiliser la méthode de la classe ProfileCreator
-        user_profile = profile_creator.create_user_profile(favorite_movies, user_name)
+        user_profile = profile_creator.create_user_profile(favorite_movies)
         print("✅ Profil créé avec succès!")
         
         # Afficher un résumé du profil
-        print(f"\n👤 PROFIL DE {user_profile.user_name.upper()}:")
+        print(f"\n👤 PROFIL :")
         print(f"🎭 Genres favoris: {', '.join(user_profile.favorite_genres[:3])}{'...' if len(user_profile.favorite_genres) > 3 else ''}")
         print(f"🎬 Réalisateurs favoris: {', '.join(user_profile.favorite_directors[:2])}{'...' if len(user_profile.favorite_directors) > 2 else ''}")
         print(f"💭 Traits: {user_profile.personality_traits[:100]}...")
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         print(f"✅ {len(recommendations.movies)} recommandations générées!")
         
         # Afficher les résultats
-        print(f"\n🎬 FILMS RECOMMANDÉS POUR {user_profile.user_name.upper()}:")
+        print(f"\n🎬 FILMS RECOMMANDÉS POUR VOUS:")
         print("=" * 50)
         
         for i, movie in enumerate(recommendations.movies, 1):

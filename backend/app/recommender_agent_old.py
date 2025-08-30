@@ -172,7 +172,7 @@ def get_movie_recommendations_from_profile(user_profile: Profile, query: str | N
         Movies: Résultat de l'agent contenant la liste des films recommandés avec posters
     """
     logger.info(f"🎬 STARTING PROFILE-BASED RECOMMENDATION PROCESS")
-    logger.info(f"👤 User: {user_profile.user_name}")
+
     logger.info(f"🎭 Favorite genres: {user_profile.favorite_genres}")
     logger.info(f"🎬 Favorite directors: {user_profile.favorite_directors}")
     logger.info(f"💭 Custom query: {query}")
@@ -283,7 +283,7 @@ if __name__ == "__main__":
     # Étape 1: Créer un profil utilisateur à partir de films favoris
     print("\n📝 ÉTAPE 1: Création du profil utilisateur")
     favorite_movies = ["The Godfather", "Pulp Fiction", "The Dark Knight"]
-    user_name = "Alice"
+   
     
     print(f"Films favoris de {user_name}: {', '.join(favorite_movies)}")
     print("🔄 Création du profil en cours...")

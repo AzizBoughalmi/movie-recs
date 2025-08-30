@@ -56,7 +56,7 @@ class MovieRecommender:
         
         # Construire la requête basée sur le profil
         profile_summary = f"""
-Profil de {user_profile.user_name} :
+Profil :
 - Films déjà vus : {', '.join(user_profile.movies_watched) if user_profile.favorite_genres else 'Non spécifiés'}
 - Genres favoris : {', '.join(user_profile.favorite_genres) if user_profile.favorite_genres else 'Non spécifiés'}
 - Réalisateurs favoris : {', '.join(user_profile.favorite_directors) if user_profile.favorite_directors else 'Non spécifiés'}
