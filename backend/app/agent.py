@@ -1,31 +1,18 @@
+from math import inf
 from pydantic_ai import Agent
 import requests
 from dotenv import load_dotenv
 #import nest_asyncio
 import os
-import logging
 import time
 from pydantic import BaseModel
 from typing import List, Any
+from utils.retry_handler import retry_on_429
+from utils.rate_limiter import rate_limit
 
 load_dotenv()
 
-# Configuration du logging pour le debugging
-LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
-LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'false').lower() == 'true'
 
-handlers = [logging.StreamHandler()]
-if LOG_TO_FILE:
-    handlers.append(logging.FileHandler('agent.log'))
-
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=handlers
-)
-logger = logging.getLogger(__name__)
-
-logger.info(f"🔧 Logging configured: Level={LOG_LEVEL}, File={LOG_TO_FILE}")
 #nest_asyncio.apply()
 
 api_key = os.getenv('GEMINI_API_KEY')
@@ -63,12 +50,14 @@ class Movie(BaseModel):
 class Movies(BaseModel):
     movies: list[Movie]
 
+@rate_limit(min_interval=2.0)
+@retry_on_429(max_retries=5, base_delay=1.0, max_delay=30.0, jitter=True)
 def search_movies_langsearch(query: str, count: int = 5, freshness: str = "noLimit", summary: bool = True):
     """
-    use this tool to search for movies similar to a given title ; or for movies of a spcific genre , or for actors in movies.
-    use this tool once to find infomation about the given movie. the use this tool again to find movies similar to the given movie using the information extracted at the beginning
+    use this tool to search for informations about movies, actors , producers , themes .
+
     """
-    logger.info(f"🔍 TOOL CALL - LangSearch: query='{query}', count={count}")
+    print(f"🔍 TOOL CALL - LangSearch: query='{query}', count={count}")
     
     headers = {
         "Authorization": f"Bearer {LANGSEARCH_API_KEY}",
@@ -81,20 +70,12 @@ def search_movies_langsearch(query: str, count: int = 5, freshness: str = "noLim
         "count": count
     }
     
-    logger.debug(f"📤 LangSearch Request: {LANGSEARCH_ENDPOINT}")
-    logger.debug(f"📤 Payload: {payload}")
-    
     start_time = time.time()
     resp = requests.post(LANGSEARCH_ENDPOINT, headers=headers, json=payload, timeout=15)
     end_time = time.time()
     
-    logger.info(f"⏱️ LangSearch Response Time: {end_time - start_time:.2f}s")
-    logger.debug(f"📥 Status Code: {resp.status_code}")
-    
     resp.raise_for_status()
     data = resp.json()
-    
-    logger.debug(f"📥 Raw Response Keys: {list(data.keys())}")
 
     results = data.get("data", {}).get("webPages", {}).get("value", [])
     processed = []
@@ -106,9 +87,7 @@ def search_movies_langsearch(query: str, count: int = 5, freshness: str = "noLim
             "summary": item.get("summary")
         })
     
-    logger.info(f"✅ LangSearch Results: Found {len(processed)} items")
-    for i, item in enumerate(processed[:3]):  # Log first 3 results
-        logger.debug(f"  {i+1}. {item.get('title', 'No title')}")
+    print(f"✅ TOOL RESULT - LangSearch: Found {len(processed)} items")
     
     return processed
 
@@ -123,8 +102,6 @@ def search_movie_poster_tmdb(title: str, year: str = "") -> str:
     Returns:
         str: URL complète du poster ou chaîne vide si non trouvé
     """
-    logger.info(f"🎬 TMDB POSTER SEARCH: '{title}' ({year})")
-    
     try:
         # Recherche du film sur TMDB
         search_url = f"{TMDB_BASE_URL}/search/movie"
@@ -136,9 +113,6 @@ def search_movie_poster_tmdb(title: str, year: str = "") -> str:
         
         if year:
             params["year"] = year
-        
-        logger.debug(f"📤 TMDB Search Request: {search_url}")
-        logger.debug(f"📤 Params: {params}")
         
         response = requests.get(search_url, params=params, timeout=10)
         response.raise_for_status()
@@ -153,17 +127,32 @@ def search_movie_poster_tmdb(title: str, year: str = "") -> str:
             
             if poster_path:
                 full_poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
-                logger.info(f"✅ TMDB Poster found: {full_poster_url}")
                 return full_poster_url
-            else:
-                logger.info(f"⚠️ TMDB: No poster found for '{title}'")
-        else:
-            logger.info(f"⚠️ TMDB: No results found for '{title}'")
             
     except Exception as e:
-        logger.error(f"❌ TMDB Error for '{title}': {str(e)}")
+        pass
     
     return ""
+
+def load_system_prompt() -> str:
+    """
+    Charge le prompt système depuis le fichier markdown
+    
+    Returns:
+        str: Le contenu du prompt système
+    """
+    try:
+        prompt_path = os.path.join(os.path.dirname(__file__), "system_prompt_simplified.md")
+        with open(prompt_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        return content
+    except Exception as e:
+        # Fallback vers le prompt hardcodé en cas d'erreur
+        fallback_prompt = """Tu es un assistant de cinéma qui suggère des films basés sur les préférences de l'utilisateur. 
+
+Pour chaque suggestion de film, tu expliques pourquoi tu le suggères. Tu donneras au moins 3 suggestions. 
+Utilise les informations trouvées via l'outil de recherche pour enrichir tes recommandations."""
+        return fallback_prompt
 
 def convert_agent_movies_to_movies(agent_movies: AgentMovies) -> Movies:
     """
@@ -175,11 +164,9 @@ def convert_agent_movies_to_movies(agent_movies: AgentMovies) -> Movies:
     Returns:
         Movies: Films enrichis avec les posters TMDB
     """
-    logger.info(f"🎨 ENRICHING {len(agent_movies.movies)} MOVIES WITH TMDB POSTERS")
     enriched_movies = []
     
     for agent_movie in agent_movies.movies:
-        logger.info(f"🔍 Searching poster for: {agent_movie.title} ({agent_movie.year})")
         poster_url = search_movie_poster_tmdb(agent_movie.title, agent_movie.year)
         
         # Créer un nouveau film avec le poster
@@ -196,13 +183,6 @@ def convert_agent_movies_to_movies(agent_movies: AgentMovies) -> Movies:
         )
         enriched_movies.append(enriched_movie)
     
-    logger.info(f"✅ ENRICHMENT COMPLETE - {len(enriched_movies)} movies with posters")
-    
-    # Log des films enrichis
-    for i, movie in enumerate(enriched_movies, 1):
-        logger.debug(f"  {i}. {movie.title} ({movie.year}) - {movie.genre}")
-        logger.debug(f"     Poster: {'✅' if movie.poster_path else '❌'}")
-    
     return Movies(movies=enriched_movies)
 
 def get_movie_recommendations(liked_movies: list[str], query: str | None = None) -> Movies:
@@ -216,19 +196,15 @@ def get_movie_recommendations(liked_movies: list[str], query: str | None = None)
     Returns:
         Any: Résultat de l'agent contenant la liste des films recommandés
     """
-    logger.info(f"🎬 STARTING RECOMMENDATION PROCESS")
-    logger.info(f"📝 User's favorite movies: {liked_movies}")
-    logger.info(f"💭 Custom query: {query}")
+    # Charger le prompt système depuis le fichier markdown
+    system_prompt = load_system_prompt()
     
     # Créer l'agent avec le prompt personnalisé
     agent = Agent(
         'gemini-2.0-flash',
         output_type=AgentMovies,
         tools=[search_movies_langsearch],
-        system_prompt="""Tu es un assistant de cinéma qui suggère des films basés sur les préférences de l'utilisateur. 
-
-Pour chaque suggestion de film, tu expliques pourquoi tu le suggères. Tu donneras au moins 3 suggestions. 
-Utilise les informations trouvées via l'outil de recherche pour enrichir tes recommandations."""
+        system_prompt=system_prompt,
     )
     
     # Construire la requête
@@ -237,21 +213,11 @@ Utilise les informations trouvées via l'outil de recherche pour enrichir tes re
     else:
         user_query = f"Voici les films que j'aime : {', '.join(liked_movies)}. Peux-tu me suggérer des films similaires ?"
     
-    logger.info(f"🤖 Sending query to Gemini AI: '{user_query}'")
-    
     # Lancer l'agent et récupérer les résultats
     start_time = time.time()
     result = agent.run_sync(user_query)
     end_time = time.time()
-    print(result)
-    logger.info(f"⏱️ Total AI Processing Time: {end_time - start_time:.2f}s")
-    logger.info(f"✅ AGENT COMPLETE - Generated {len(result.output.movies)} recommendations")
-    
-    # Log des recommandations de l'agent
-    for i, movie in enumerate(result.output.movies, 1):
-        logger.debug(f"  {i}. {movie.title} ({movie.year}) - {movie.genre}")
-        logger.debug(f"     Why: {movie.why_recommended[:100]}...")
-    
+     
     # Convertir et enrichir avec les posters TMDB
     return convert_agent_movies_to_movies(result.output)
 

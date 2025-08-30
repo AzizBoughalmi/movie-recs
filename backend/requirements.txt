@@ -1,0 +1,4 @@
+pydantic-ai==0.8.1
+requests
+python-dotenv
+pydantic
