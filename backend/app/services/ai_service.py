@@ -30,7 +30,7 @@ class AIService:
             6. Suggérer de nouveaux genres à explorer
             7. Identifier ses préférences d'ambiance de visionnage
             
-            N'Utiliser l'outil de recherche que dans le cas où un film est inconnu pour toi .
+            Utiliser l'outil de recherche dans le cas où vos connaissances ne permettent pas de compléter le profil.
             
             Sois précis, perspicace et créatif dans ton analyse. Crée un profil riche et nuancé qui capture vraiment l'essence des goûts cinématographiques de l'utilisateur."""
         )

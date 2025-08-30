@@ -7,6 +7,8 @@ from core.profile_creator import ProfileCreator
 from core.recommender import MovieRecommender
 from models.movie import Movies, Movie
 from models.profile import Profile
+import nest_asyncio
+nest_asyncio.apply()
 
 # Exemple d'utilisation avec les classes
 if __name__ == "__main__":
@@ -19,7 +21,7 @@ if __name__ == "__main__":
     
     # Étape 1: Créer un profil utilisateur à partir de films favoris
     print("\n📝 ÉTAPE 1: Création du profil utilisateur")
-    favorite_movies = ["Home Alone", "The mask"]
+    favorite_movies = ["Home Alone", "The mask", "shutter island", "the illusionist"]
     user_name = "Alice"
     
     print(f"Films favoris de {user_name}: {', '.join(favorite_movies)}")
@@ -66,17 +68,4 @@ if __name__ == "__main__":
         
     except Exception as e:
         print(f"❌ Erreur lors de la démonstration: {str(e)}")
-        print("\n🔄 Utilisation de l'ancienne méthode comme fallback...")
-        
-        # Fallback vers l'ancienne méthode avec la classe
-        recommendations = movie_recommender.get_recommendations_legacy(favorite_movies)
-        
-        print("Films recommandés (méthode classique):")
-        for movie in recommendations.movies:
-            print(f"\n- {movie.title} ({movie.year})")
-        print("Films recommandés (méthode classique):")
-        for movie in recommendations.movies:
-            print(f"\n- {movie.title} ({movie.year})")
-            print(f"  Genre: {movie.genre}")
-            print(f"  Réalisateur: {movie.director}")
-            print(f"  Pourquoi recommandé: {movie.why_recommended}")
+

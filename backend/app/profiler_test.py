@@ -3,8 +3,12 @@ Test pour la création de profils utilisateur
 Utilise la nouvelle architecture modulaire avec ProfileCreator
 """
 
+import nest_asyncio
 from core.profile_creator import ProfileCreator
 from models.profile import Profile
+
+# Appliquer nest_asyncio pour permettre les boucles d'événements imbriquées
+nest_asyncio.apply()
 
 # Exemple d'utilisation avec la classe ProfileCreator
 if __name__ == "__main__":
@@ -12,7 +16,7 @@ if __name__ == "__main__":
     profile_creator = ProfileCreator()
     
     # Films favoris de l'utilisateur
-    favorite_movies = ["blade runner"]
+    favorite_movies = ["Fight club" , "shutter island"]
     user_name = "John"
     
     # Créer le profil utilisateur en utilisant la méthode de la classe
