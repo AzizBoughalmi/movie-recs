@@ -11,7 +11,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-from .agent import get_movie_recommendations
+from .recommender_agent import get_movie_recommendations
 
 # Configuration du logging pour FastAPI
 logging.basicConfig(
