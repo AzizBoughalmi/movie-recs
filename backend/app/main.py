@@ -11,7 +11,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-from .recommender_agent import get_movie_recommendations
+from core.recommender import MovieRecommender
 
 # Configuration du logging pour FastAPI
 logging.basicConfig(
@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = FastAPI()
+
+# Créer une instance du MovieRecommender
+movie_recommender = MovieRecommender()
 
 # Modèles Pydantic
 class RecommendationRequest(BaseModel):
@@ -116,7 +119,7 @@ def get_recommendations(request: RecommendationRequest):
     
     try:
         logger.info(f"🚀 Starting AI recommendation process...")
-        recommendations = get_movie_recommendations(request.favorites, request.query)
+        recommendations = movie_recommender.get_recommendations_legacy(request.favorites, request.query)
         
         end_time = time.time()
         logger.info(f"⏱️ Total API Processing Time: {end_time - start_time:.2f}s")

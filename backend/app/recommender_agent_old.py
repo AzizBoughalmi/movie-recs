@@ -8,7 +8,7 @@ import time
 from pydantic import BaseModel
 from typing import List, Any
 from utils.search_tools import search_movies_langsearch
-from profile_maker import Profile
+from backend.app.profiler_test import Profile
 
 
 load_dotenv()
@@ -275,7 +275,7 @@ Utilise les informations trouvées via l'outil de recherche pour enrichir tes re
 
 # Exemple d'utilisation
 if __name__ == "__main__":
-    from profile_maker import create_user_profile
+    from backend.app.profiler_test import create_user_profile
     
     print("🎬 DÉMONSTRATION DE L'INTÉGRATION PROFILE_MAKER + RECOMMENDER_AGENT")
     print("=" * 70)
