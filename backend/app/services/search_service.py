@@ -4,7 +4,7 @@ from threading import Lock
 from functools import wraps
 from typing import List, Dict, Any, Callable
 import logging
-from config.settings import settings
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
