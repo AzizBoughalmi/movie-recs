@@ -5,11 +5,14 @@ function App() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   
   // Référence pour le scroll automatique vers les recommandations
   const recommendationsRef = useRef(null);
+  const profileRef = useRef(null);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -63,26 +66,55 @@ function App() {
     };
   };
 
-  const getRecommendations = async () => {
+  const createProfile = async () => {
     if (favorites.length === 0) {
       alert("Ajoutez d'abord des films à vos favoris !");
       return;
     }
 
-    setLoading(true);
+    setProfileLoading(true);
     try {
       const favoriteTitles = favorites.map(f => f.title || f.name);
-      const res = await axios.post(`http://localhost:8000/recommendations`, {
-        favorites: favoriteTitles,
-        query: "Suggère-moi des films similaires à mes favoris"
+      const res = await axios.post(`http://localhost:8000/profile/create`, {
+        favorite_movies: favoriteTitles
       });
       
-      const newRecommendations = res.data.movies || [];
-      setRecommendations(newRecommendations);
+      setUserProfile(res.data);
       
       // Effacer les résultats de recherche précédents et le champ de recherche
       setResults([]);
       setQuery("");
+      
+      // Scroll automatique vers le profil après un petit délai
+      setTimeout(() => {
+        profileRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    } catch (err) {
+      console.error("Erreur lors de la création du profil :", err);
+      alert("Erreur lors de la création du profil");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const getRecommendationsFromProfile = async () => {
+    if (!userProfile) {
+      alert("Créez d'abord votre profil !");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await axios.post(`http://localhost:8000/recommendations/from-profile`, {
+        profile: userProfile,
+        custom_query: null
+      });
+      
+      const newRecommendations = res.data.movies || [];
+      setRecommendations(newRecommendations);
       
       // Scroll automatique vers les recommandations après un petit délai
       if (newRecommendations.length > 0) {
@@ -192,17 +224,31 @@ function App() {
                     </span>
                   </h2>
                   
-                  <button
-                    onClick={getRecommendations}
-                    disabled={loading}
-                    className={`w-full sm:w-auto lg:w-full px-6 py-3 font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
-                      loading
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-teal-500 hover:bg-teal-400 text-white transform hover:scale-105"
-                    }`}
-                  >
-                    {loading ? "⏳ Génération..." : "🎯 Obtenir des recommandations"}
-                  </button>
+                  {!userProfile ? (
+                    <button
+                      onClick={createProfile}
+                      disabled={profileLoading}
+                      className={`w-full sm:w-auto lg:w-full px-6 py-3 font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
+                        profileLoading
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-purple-500 hover:bg-purple-400 text-white transform hover:scale-105"
+                      }`}
+                    >
+                      {profileLoading ? "⏳ Création..." : "👤 Créer mon profil"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={getRecommendationsFromProfile}
+                      disabled={loading}
+                      className={`w-full sm:w-auto lg:w-full px-6 py-3 font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
+                        loading
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-teal-500 hover:bg-teal-400 text-white transform hover:scale-105"
+                      }`}
+                    >
+                      {loading ? "⏳ Génération..." : "🎯 Obtenir des recommandations"}
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
@@ -241,6 +287,110 @@ function App() {
             </div>
           )}
         </div>
+
+        {/* User Profile Section */}
+        {userProfile && (
+          <section ref={profileRef} className="mb-12">
+            <h2 className="text-2xl font-semibold text-white mb-6">
+              👤 <span className="text-purple-400">Votre Profil Cinématographique</span>
+            </h2>
+            <div className="bg-gradient-to-br from-purple-900 to-gray-800 border-2 border-purple-400 rounded-2xl p-8 shadow-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Genres favoris */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎬 Genres favoris</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {userProfile.favorite_genres?.map((genre, index) => (
+                      <span key={index} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-full">
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Réalisateurs favoris */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎥 Réalisateurs favoris</h3>
+                  <div className="space-y-1">
+                    {userProfile.favorite_directors?.slice(0, 5).map((director, index) => (
+                      <p key={index} className="text-gray-300 text-sm">{director}</p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Acteurs favoris */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">⭐ Acteurs favoris</h3>
+                  <div className="space-y-1">
+                    {userProfile.favorite_actors?.slice(0, 5).map((actor, index) => (
+                      <p key={index} className="text-gray-300 text-sm">{actor}</p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Décennies préférées */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">📅 Décennies préférées</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {userProfile.preferred_decades?.map((decade, index) => (
+                      <span key={index} className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-full">
+                        {decade}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Préférences d'ambiance */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🌙 Ambiances préférées</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {userProfile.viewing_mood_preferences?.map((mood, index) => (
+                      <span key={index} className="px-3 py-1 bg-teal-600 text-white text-sm rounded-full">
+                        {mood}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Genres à explorer */}
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🔍 Genres à explorer</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {userProfile.recommended_genres_to_explore?.map((genre, index) => (
+                      <span key={index} className="px-3 py-1 bg-orange-600 text-white text-sm rounded-full">
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Description du goût cinématographique */}
+              {userProfile.cinematic_taste_description && (
+                <div className="mt-6 bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎨 Votre goût cinématographique</h3>
+                  <p className="text-gray-300 leading-relaxed">{userProfile.cinematic_taste_description}</p>
+                </div>
+              )}
+
+              {/* Préférences cinématographiques */}
+              {userProfile.movie_preferences && (
+                <div className="mt-4 bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">💭 Vos préférences</h3>
+                  <p className="text-gray-300 leading-relaxed">{userProfile.movie_preferences}</p>
+                </div>
+              )}
+
+              {/* Traits de personnalité */}
+              {userProfile.personality_traits && (
+                <div className="mt-4 bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🧠 Traits de personnalité</h3>
+                  <p className="text-gray-300 leading-relaxed">{userProfile.personality_traits}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Recommendations Section */}
         {recommendations.length > 0 && (
