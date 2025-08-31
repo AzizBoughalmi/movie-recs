@@ -1,9 +1,8 @@
-import nest_asyncio
+
 from pydantic_ai import Agent
 from config.settings import settings
 from services.search_service import search_movies_langsearch
 
-nest_asyncio.apply()
 
 class AIService:
     """Service pour les interactions avec les agents AI"""
