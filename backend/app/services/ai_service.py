@@ -1,7 +1,7 @@
 
 from pydantic_ai import Agent
-from config.settings import settings
-from services.search_service import search_movies_langsearch
+from app.config.settings import settings
+from app.services.search_service import search_movies_langsearch
 
 
 class AIService:
