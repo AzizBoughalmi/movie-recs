@@ -18,6 +18,7 @@ from app.core.profile_creator import ProfileCreator
 from app.models.profile import Profile
 from app.services.profile_service import ProfileService
 from app.utils.session_utils import get_or_create_session_id, get_session_id
+from app.config.settings import settings
 
 # Configuration du logging pour FastAPI
 logging.basicConfig(
@@ -31,7 +32,7 @@ load_dotenv()
 app = FastAPI()
 
 # Configuration du middleware de session
-app.add_middleware(SessionMiddleware, secret_key="movie-recs-secret-key")
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 # Créer les instances des services
 movie_recommender = MovieRecommender()
@@ -52,7 +53,7 @@ class ProfileRecommendationRequest(BaseModel):
     custom_query: Optional[str] = None
 
 # CORS
-origins = ["http://localhost:5173"]
+origins = [settings.FRONTEND_URL]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -65,9 +66,8 @@ app.add_middleware(
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
-print("TMDB_API_KEY =", TMDB_API_KEY)  # Debug
-TMDB_BASE_URL = "https://api.themoviedb.org/3"
+TMDB_API_KEY = settings.TMDB_API_KEY
+TMDB_BASE_URL = settings.TMDB_BASE_URL
 
 @app.get("/ping")
 def ping():

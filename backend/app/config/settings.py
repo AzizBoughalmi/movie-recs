@@ -6,10 +6,30 @@ load_dotenv()
 class Settings:
     """Configuration centralisée de l'application"""
     
-    # API Keys
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    TMDB_API_KEY = os.getenv('TMDB_API_KEY')
-    LANGSEARCH_API_KEY = os.getenv('LANGSEARCH_API_KEY')
+    def __init__(self):
+        # API Keys
+        self.GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+        self.TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+        self.LANGSEARCH_API_KEY = os.getenv('LANGSEARCH_API_KEY')
+        
+        # Security
+        self.SECRET_KEY = os.getenv('SECRET_KEY')
+        
+        # API Configuration
+        self.API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
+        self.FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        
+        # Validate required environment variables
+        self._validate_required_vars()
+    
+    def _validate_required_vars(self):
+        """Validate required environment variables"""
+        if not self.SECRET_KEY:
+            raise ValueError("SECRET_KEY environment variable is required")
+        if not self.TMDB_API_KEY:
+            raise ValueError("TMDB_API_KEY environment variable is required")
+        if not self.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY environment variable is required")
     
     # API Endpoints
     TMDB_BASE_URL = "https://api.themoviedb.org/3"

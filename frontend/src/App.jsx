@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import config from "./config.js";
+
 // Configure axios to always send cookies
 axios.defaults.withCredentials = true;
 
@@ -34,7 +36,7 @@ function App() {
   useEffect(() => {
     const checkForExistingProfiles = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/profile/list');
+        const res = await axios.get(config.getApiUrl('profile/list'));
         
         if (res.data.profiles && res.data.profiles.length > 0) {
           // Récupérer le profil le plus récent (dernier dans la liste)
@@ -59,7 +61,7 @@ function App() {
     if (!query.trim()) return;
 
     try {
-      const res = await axios.get(`http://localhost:8000/search`, {
+      const res = await axios.get(config.getApiUrl('search'), {
         params: { query }
       });
       setResults(res.data);
@@ -116,7 +118,7 @@ function App() {
     setProfileLoading(true);
     try {
       const favoriteTitles = favorites.map(f => f.title || f.name);
-      const res = await axios.post(`http://localhost:8000/profile/create`, {
+      const res = await axios.post(config.getApiUrl('profile/create'), {
         favorite_movies: favoriteTitles
       });
       
@@ -151,7 +153,7 @@ function App() {
 
     setLoading(true);
     try {
-      const res = await axios.post(`http://localhost:8000/recommendations/from-profile`, {
+      const res = await axios.post(config.getApiUrl('recommendations/from-profile'), {
         profile: userProfile,
         custom_query: null
       });
@@ -198,7 +200,7 @@ function App() {
 
     setSaveLoading(true);
     try {
-      const res = await axios.put(`http://localhost:8000/profile/${profileId}`, editedProfile);
+      const res = await axios.put(config.getApiUrl(`profile/${profileId}`), editedProfile);
       
       if (res.data.success) {
         setUserProfile(editedProfile);
