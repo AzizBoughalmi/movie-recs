@@ -242,6 +242,44 @@ def get_recommendations_from_profile(request: ProfileRecommendationRequest):
         
         return {"error": f"Erreur lors de la génération des recommandations basées sur le profil: {str(e)}"}
 
+@app.get("/profile/list")
+def list_profiles(http_request: Request):
+    """
+    Liste tous les profils de la session courante
+    
+    Args:
+        http_request: Requête HTTP pour la gestion de session
+    
+    Returns:
+        Liste des profils avec leurs IDs
+    """
+    logger.info(f"📋 API CALL - /profile/list")
+    
+    try:
+        # Use get_or_create_session_id to handle cases where no session exists
+        session_id = get_or_create_session_id(http_request)
+        
+        # Get all profiles for this session
+        session_profiles = profile_service.get_session_profiles(session_id)
+        
+        # Convert to list format with profile_id and profile data
+        profiles_list = [
+            {
+                "profile_id": profile_id,
+                "profile": profile
+            }
+            for profile_id, profile in session_profiles.items()
+        ]
+        
+        logger.info(f"✅ Found {len(profiles_list)} profiles in session {session_id}")
+        
+        return {"profiles": profiles_list}
+        
+    except Exception as e:
+        logger.error(f"❌ LIST PROFILES ERROR: {str(e)}")
+        logger.exception("Full error traceback:")
+        return {"profiles": []}
+
 @app.get("/profile/{profile_id}")
 def get_profile(profile_id: str, http_request: Request):
     """
@@ -298,7 +336,7 @@ def update_profile(profile_id: str, updated_profile: Profile, http_request: Requ
     try:
         # Récupérer la session
         print("getting session id")
-        session_id = get_session_id(http_request)
+        session_id = get_or_create_session_id(http_request)
         print("session id recupéré ")
         
         # Vérifier que le profil existe

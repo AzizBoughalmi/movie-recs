@@ -33,10 +33,23 @@ class ProfileService:
             profile_id: Identifiant unique du profil
             profile: Profil à sauvegarder
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"🔄 SAVE_PROFILE - session_id: {session_id}, profile_id: {profile_id}")
+        
         if session_id not in profiles_by_session:
             profiles_by_session[session_id] = {}
+            logger.info(f"📝 Created new session storage for: {session_id}")
         
         profiles_by_session[session_id][profile_id] = profile
+        
+        # Log current state
+        logger.info(f"✅ Profile saved successfully")
+        logger.info(f"📊 Total sessions: {len(profiles_by_session)}")
+        logger.info(f"📊 Profiles in this session: {len(profiles_by_session[session_id])}")
+        logger.debug(f"🗂️ All session IDs: {list(profiles_by_session.keys())}")
+        logger.debug(f"🗂️ Profile IDs in session {session_id}: {list(profiles_by_session[session_id].keys())}")
     
     def get_profile(self, session_id: str, profile_id: str) -> Optional[Profile]:
         """
@@ -49,8 +62,38 @@ class ProfileService:
         Returns:
             Le profil s'il existe, None sinon
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"🔍 GET_PROFILE - session_id: {session_id}, profile_id: {profile_id}")
+        
+        # Log current storage state
+        logger.info(f"📊 Total sessions in storage: {len(profiles_by_session)}")
+        logger.debug(f"🗂️ All session IDs in storage: {list(profiles_by_session.keys())}")
+        
+        # Check if session exists
+        if session_id not in profiles_by_session:
+            logger.warning(f"❌ Session {session_id} not found in storage")
+            logger.debug(f"🔍 Available sessions: {list(profiles_by_session.keys())}")
+            return None
+        
         session_profiles = profiles_by_session.get(session_id, {})
-        return session_profiles.get(profile_id)
+        logger.info(f"📊 Profiles in session {session_id}: {len(session_profiles)}")
+        logger.debug(f"🗂️ Profile IDs in session: {list(session_profiles.keys())}")
+        
+        # Check if profile exists in session
+        if profile_id not in session_profiles:
+            logger.warning(f"❌ Profile {profile_id} not found in session {session_id}")
+            logger.debug(f"🔍 Available profiles in session: {list(session_profiles.keys())}")
+            return None
+        
+        profile = session_profiles.get(profile_id)
+        if profile:
+            logger.info(f"✅ Profile {profile_id} found and returned")
+        else:
+            logger.error(f"❌ Profile {profile_id} exists in dict but is None/empty")
+        
+        return profile
     
     def delete_profile(self, session_id: str, profile_id: str) -> bool:
         """

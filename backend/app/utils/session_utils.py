@@ -21,9 +21,11 @@ def get_or_create_session_id(request: Request) -> str:
     if not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        logger.info(f"🆔 New session created: {session_id}")
+        logger.info(f"🆔 NEW SESSION CREATED: {session_id}")
+        logger.debug(f"🔧 Session data after creation: {dict(request.session)}")
     else:
-        logger.debug(f"🆔 Existing session: {session_id}")
+        logger.info(f"🆔 EXISTING SESSION FOUND: {session_id}")
+        logger.debug(f"🔧 Current session data: {dict(request.session)}")
     return session_id
 
 def get_session_id(request: Request) -> str:
@@ -39,7 +41,13 @@ def get_session_id(request: Request) -> str:
     Raises:
         HTTPException: Si aucune session n'existe
     """
+    logger.info(f"🔍 GET_SESSION_ID called")
+    logger.debug(f"🔧 Current session data: {dict(request.session)}")
+    
     session_id = request.session.get("session_id")
     if not session_id:
+        logger.error(f"❌ NO SESSION FOUND - session data: {dict(request.session)}")
         raise HTTPException(status_code=400, detail="No active session found")
+    
+    logger.info(f"🆔 SESSION FOUND: {session_id}")
     return session_id

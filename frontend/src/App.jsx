@@ -30,6 +30,31 @@ function App() {
     }
   }, [favorites.length]); // Se déclenche quand le nombre de favoris change
 
+  // Effet pour vérifier s'il existe des profils dans la session au chargement de la page
+  useEffect(() => {
+    const checkForExistingProfiles = async () => {
+      try {
+        const res = await axios.get('http://localhost:8000/profile/list');
+        
+        if (res.data.profiles && res.data.profiles.length > 0) {
+          // Récupérer le profil le plus récent (dernier dans la liste)
+          const latestProfileData = res.data.profiles[res.data.profiles.length - 1];
+          
+          // Définir le profil et l'ID du profil
+          setUserProfile(latestProfileData.profile);
+          setProfileId(latestProfileData.profile_id);
+          
+          console.log("Profil restauré depuis la session:", latestProfileData.profile_id);
+        }
+      } catch (err) {
+        console.log("Aucun profil existant trouvé ou erreur:", err);
+        // C'est normal pour les nouveaux utilisateurs, donc on n'affiche pas d'erreur
+      }
+    };
+    
+    checkForExistingProfiles();
+  }, []); // Tableau de dépendances vide = s'exécute une seule fois au montage
+
   const handleSearch = async () => {
     if (!query.trim()) return;
 
