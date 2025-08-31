@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 function App() {
@@ -13,6 +13,16 @@ function App() {
   // Référence pour le scroll automatique vers les recommandations
   const recommendationsRef = useRef(null);
   const profileRef = useRef(null);
+
+  // Effet pour détecter les changements dans la liste des favoris
+  // et réinitialiser le profil pour faire réapparaître le bouton "Créer mon profil"
+  useEffect(() => {
+    // Si un profil existe et que la liste des favoris change, on réinitialise le profil
+    if (userProfile) {
+      setUserProfile(null);
+      setRecommendations([]); // Effacer aussi les recommandations précédentes
+    }
+  }, [favorites.length]); // Se déclenche quand le nombre de favoris change
 
   const handleSearch = async () => {
     if (!query.trim()) return;
