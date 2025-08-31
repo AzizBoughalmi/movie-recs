@@ -1,7 +1,7 @@
-from models.profile import Profile
-from models.movie import AgentMovies, Movies, Movie
-from services.ai_service import ai_service
-from services.tmdb_service import tmdb_service
+from app.models.profile import Profile
+from app.models.movie import AgentMovies, Movies, Movie
+from app.services.ai_service import ai_service
+from app.services.tmdb_service import tmdb_service
 
 class MovieRecommender:
     """Classe responsable de la génération de recommandations de films"""

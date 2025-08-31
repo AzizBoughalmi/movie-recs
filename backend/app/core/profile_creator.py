@@ -1,5 +1,5 @@
-from models.profile import Profile
-from services.ai_service import ai_service
+from app.models.profile import Profile
+from app.services.ai_service import ai_service
 
 class ProfileCreator:
     """Classe responsable de la création de profils utilisateur"""

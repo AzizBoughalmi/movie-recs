@@ -1,5 +1,5 @@
 import requests
-from config.settings import settings
+from app.config.settings import settings
 
 class TMDBService:
     """Service pour les interactions avec l'API TMDB"""

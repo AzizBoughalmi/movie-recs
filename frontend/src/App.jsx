@@ -1,14 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+// Configure axios to always send cookies
+axios.defaults.withCredentials = true;
 
 function App() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [profileId, setProfileId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   
   // Référence pour le scroll automatique vers les recommandations
   const recommendationsRef = useRef(null);
@@ -89,7 +95,9 @@ function App() {
         favorite_movies: favoriteTitles
       });
       
-      setUserProfile(res.data);
+      // Le backend retourne maintenant {profile_id, profile}
+      setProfileId(res.data.profile_id);
+      setUserProfile(res.data.profile);
       
       // Effacer les résultats de recherche précédents et le champ de recherche
       setResults([]);
@@ -147,6 +155,61 @@ function App() {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  // Fonctions pour l'édition du profil
+  const startEditing = () => {
+    setEditedProfile({ ...userProfile });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditedProfile(null);
+    setIsEditing(false);
+  };
+
+  const saveProfile = async () => {
+    if (!profileId || !editedProfile) return;
+
+    setSaveLoading(true);
+    try {
+      const res = await axios.put(`http://localhost:8000/profile/${profileId}`, editedProfile);
+      
+      if (res.data.success) {
+        setUserProfile(editedProfile);
+        setIsEditing(false);
+        setEditedProfile(null);
+        alert("Profil mis à jour avec succès !");
+      }
+    } catch (err) {
+      console.error("Erreur lors de la sauvegarde du profil :", err);
+      alert("Erreur lors de la sauvegarde du profil");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Fonctions pour modifier les champs du profil
+  const updateProfileField = (field, value) => {
+    setEditedProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const addToList = (field, newItem) => {
+    if (!newItem.trim()) return;
+    setEditedProfile(prev => ({
+      ...prev,
+      [field]: [...(prev[field] || []), newItem.trim()]
+    }));
+  };
+
+  const removeFromList = (field, index) => {
+    setEditedProfile(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -301,101 +364,408 @@ function App() {
         {/* User Profile Section */}
         {userProfile && (
           <section ref={profileRef} className="mb-12">
-            <h2 className="text-2xl font-semibold text-white mb-6">
-              👤 <span className="text-purple-400">Votre Profil Cinématographique</span>
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-white">
+                👤 <span className="text-purple-400">Votre Profil Cinématographique</span>
+              </h2>
+              
+              {!isEditing ? (
+                <button
+                  onClick={startEditing}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                >
+                  ✏️ Modifier
+                </button>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={saveProfile}
+                    disabled={saveLoading}
+                    className={`px-4 py-2 font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
+                      saveLoading
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-green-500 hover:bg-green-400 text-white transform hover:scale-105"
+                    }`}
+                  >
+                    {saveLoading ? "⏳ Sauvegarde..." : "💾 Sauvegarder"}
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    ❌ Annuler
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="bg-gradient-to-br from-purple-900 to-gray-800 border-2 border-purple-400 rounded-2xl p-8 shadow-lg">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Genres favoris */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🎬 Genres favoris</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile.favorite_genres?.map((genre, index) => (
-                      <span key={index} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-full">
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.favorite_genres?.map((genre, index) => (
+                        <span key={index} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-full">
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.favorite_genres?.map((genre, index) => (
+                          <span key={index} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {genre}
+                            <button
+                              onClick={() => removeFromList('favorite_genres', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter un genre..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('favorite_genres', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('favorite_genres', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-purple-500 hover:bg-purple-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Réalisateurs favoris */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🎥 Réalisateurs favoris</h3>
-                  <div className="space-y-1">
-                    {userProfile.favorite_directors?.slice(0, 5).map((director, index) => (
-                      <p key={index} className="text-gray-300 text-sm">{director}</p>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="space-y-1">
+                      {userProfile.favorite_directors?.slice(0, 5).map((director, index) => (
+                        <p key={index} className="text-gray-300 text-sm">{director}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.favorite_directors?.map((director, index) => (
+                          <span key={index} className="px-3 py-1 bg-blue-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {director}
+                            <button
+                              onClick={() => removeFromList('favorite_directors', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter un réalisateur..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('favorite_directors', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('favorite_directors', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-blue-500 hover:bg-blue-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Acteurs favoris */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">⭐ Acteurs favoris</h3>
-                  <div className="space-y-1">
-                    {userProfile.favorite_actors?.slice(0, 5).map((actor, index) => (
-                      <p key={index} className="text-gray-300 text-sm">{actor}</p>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="space-y-1">
+                      {userProfile.favorite_actors?.slice(0, 5).map((actor, index) => (
+                        <p key={index} className="text-gray-300 text-sm">{actor}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.favorite_actors?.map((actor, index) => (
+                          <span key={index} className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {actor}
+                            <button
+                              onClick={() => removeFromList('favorite_actors', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter un acteur..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('favorite_actors', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('favorite_actors', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-yellow-500 hover:bg-yellow-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Décennies préférées */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">📅 Décennies préférées</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile.preferred_decades?.map((decade, index) => (
-                      <span key={index} className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-full">
-                        {decade}
-                      </span>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.preferred_decades?.map((decade, index) => (
+                        <span key={index} className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-full">
+                          {decade}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.preferred_decades?.map((decade, index) => (
+                          <span key={index} className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {decade}
+                            <button
+                              onClick={() => removeFromList('preferred_decades', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter une décennie (ex: 1990s)..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('preferred_decades', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('preferred_decades', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-indigo-500 hover:bg-indigo-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Préférences d'ambiance */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🌙 Ambiances préférées</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile.viewing_mood_preferences?.map((mood, index) => (
-                      <span key={index} className="px-3 py-1 bg-teal-600 text-white text-sm rounded-full">
-                        {mood}
-                      </span>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.viewing_mood_preferences?.map((mood, index) => (
+                        <span key={index} className="px-3 py-1 bg-teal-600 text-white text-sm rounded-full">
+                          {mood}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.viewing_mood_preferences?.map((mood, index) => (
+                          <span key={index} className="px-3 py-1 bg-teal-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {mood}
+                            <button
+                              onClick={() => removeFromList('viewing_mood_preferences', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter une ambiance..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('viewing_mood_preferences', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('viewing_mood_preferences', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-teal-500 hover:bg-teal-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Genres à explorer */}
                 <div className="bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🔍 Genres à explorer</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile.recommended_genres_to_explore?.map((genre, index) => (
-                      <span key={index} className="px-3 py-1 bg-orange-600 text-white text-sm rounded-full">
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
+                  {!isEditing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.recommended_genres_to_explore?.map((genre, index) => (
+                        <span key={index} className="px-3 py-1 bg-orange-600 text-white text-sm rounded-full">
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {editedProfile.recommended_genres_to_explore?.map((genre, index) => (
+                          <span key={index} className="px-3 py-1 bg-orange-600 text-white text-sm rounded-full flex items-center gap-2">
+                            {genre}
+                            <button
+                              onClick={() => removeFromList('recommended_genres_to_explore', index)}
+                              className="text-red-300 hover:text-red-100 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ajouter un genre à explorer..."
+                          className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              addToList('recommended_genres_to_explore', e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            addToList('recommended_genres_to_explore', input.value);
+                            input.value = '';
+                          }}
+                          className="px-3 py-1 bg-orange-500 hover:bg-orange-400 text-white text-sm rounded-lg transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Description du goût cinématographique */}
-              {userProfile.cinematic_taste_description && (
+              {(userProfile.cinematic_taste_description || isEditing) && (
                 <div className="mt-6 bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🎨 Votre goût cinématographique</h3>
-                  <p className="text-gray-300 leading-relaxed">{userProfile.cinematic_taste_description}</p>
+                  {!isEditing ? (
+                    <p className="text-gray-300 leading-relaxed">{userProfile.cinematic_taste_description}</p>
+                  ) : (
+                    <textarea
+                      value={editedProfile.cinematic_taste_description || ''}
+                      onChange={(e) => updateProfileField('cinematic_taste_description', e.target.value)}
+                      placeholder="Décrivez votre goût cinématographique..."
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      rows="4"
+                    />
+                  )}
                 </div>
               )}
 
               {/* Préférences cinématographiques */}
-              {userProfile.movie_preferences && (
+              {(userProfile.movie_preferences || isEditing) && (
                 <div className="mt-4 bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">💭 Vos préférences</h3>
-                  <p className="text-gray-300 leading-relaxed">{userProfile.movie_preferences}</p>
+                  {!isEditing ? (
+                    <p className="text-gray-300 leading-relaxed">{userProfile.movie_preferences}</p>
+                  ) : (
+                    <textarea
+                      value={editedProfile.movie_preferences || ''}
+                      onChange={(e) => updateProfileField('movie_preferences', e.target.value)}
+                      placeholder="Décrivez vos préférences cinématographiques..."
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      rows="4"
+                    />
+                  )}
                 </div>
               )}
 
               {/* Traits de personnalité */}
-              {userProfile.personality_traits && (
+              {(userProfile.personality_traits || isEditing) && (
                 <div className="mt-4 bg-gray-800 rounded-xl p-4">
                   <h3 className="text-lg font-semibold text-purple-400 mb-3">🧠 Traits de personnalité</h3>
-                  <p className="text-gray-300 leading-relaxed">{userProfile.personality_traits}</p>
+                  {!isEditing ? (
+                    <p className="text-gray-300 leading-relaxed">{userProfile.personality_traits}</p>
+                  ) : (
+                    <textarea
+                      value={editedProfile.personality_traits || ''}
+                      onChange={(e) => updateProfileField('personality_traits', e.target.value)}
+                      placeholder="Décrivez vos traits de personnalité liés au cinéma..."
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      rows="4"
+                    />
+                  )}
                 </div>
               )}
             </div>
