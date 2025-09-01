@@ -244,9 +244,14 @@ function App() {
       {/* Header */}
       <header className="bg-gray-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-4xl font-bold text-white text-center mb-8">
-            🎬 <span className="text-teal-400">AI Cinephile - AI-Powered Movie Recommendations</span>
+          <h1 className="text-4xl font-bold text-white text-center mb-4">
+            🎬 <span className="text-teal-400">AI Cinephile</span>
           </h1>
+          
+          {/* Description */}
+          <p className="text-lg text-gray-300 text-center mb-8 max-w-2xl mx-auto">
+            🎭 Discover your cinematic soul • Add your favorite films and unlock personalized recommendations powered by AI
+          </p>
           
           {/* Search Section */}
           <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
@@ -324,7 +329,7 @@ function App() {
                     </span>
                   </h2>
                   
-                  {!userProfile ? (
+                  {!userProfile && (
                     <button
                       onClick={createProfile}
                       disabled={profileLoading}
@@ -335,18 +340,6 @@ function App() {
                       }`}
                     >
                       {profileLoading ? "⏳ Creating..." : "👤 Create my profile"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={getRecommendationsFromProfile}
-                      disabled={loading}
-                      className={`w-full sm:w-auto lg:w-full px-6 py-3 font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
-                        loading
-                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                          : "bg-teal-500 hover:bg-teal-400 text-white transform hover:scale-105"
-                      }`}
-                    >
-                      {loading ? "⏳ Generating..." : "🎯 Get recommendations"}
                     </button>
                   )}
                 </div>
@@ -391,41 +384,64 @@ function App() {
         {/* User Profile Section */}
         {userProfile && (
           <section ref={profileRef} className="mb-12">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
               <h2 className="text-2xl font-semibold text-white">
                 👤 <span className="text-purple-400">Your Cinematic Profile</span>
               </h2>
               
-              {!isEditing ? (
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Get recommendations button - always visible when profile exists */}
                 <button
-                  onClick={startEditing}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                  onClick={getRecommendationsFromProfile}
+                  disabled={loading}
+                  className={`px-6 py-3 font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
+                    loading
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      : "bg-teal-500 hover:bg-teal-400 text-white transform hover:scale-105"
+                  }`}
                 >
-                  ✏️ Edit
+                  {loading ? "⏳ Generating..." : "🎯 Get recommendations"}
                 </button>
-              ) : (
-                <div className="flex gap-3">
+                
+                {/* Edit/Save/Cancel buttons */}
+                {!isEditing ? (
                   <button
-                    onClick={saveProfile}
-                    disabled={saveLoading}
-                    className={`px-4 py-2 font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
-                      saveLoading
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-green-500 hover:bg-green-400 text-white transform hover:scale-105"
-                    }`}
+                    onClick={startEditing}
+                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    {saveLoading ? "⏳ Saving..." : "💾 Save"}
+                    ✏️ Edit
                   </button>
-                  <button
-                    onClick={cancelEditing}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
-                  >
-                    ❌ Cancel
-                  </button>
-                </div>
-              )}
+                ) : (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={saveProfile}
+                      disabled={saveLoading}
+                      className={`px-4 py-2 font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg ${
+                        saveLoading
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-green-500 hover:bg-green-400 text-white transform hover:scale-105"
+                      }`}
+                    >
+                      {saveLoading ? "⏳ Saving..." : "💾 Save"}
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                    >
+                      ❌ Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="bg-gradient-to-br from-purple-900 to-gray-800 border-2 border-purple-400 rounded-2xl p-8 shadow-lg">
+              {/* Instruction message */}
+              <div className="mb-6 p-4 bg-blue-900/50 border border-blue-400 rounded-xl">
+                <p className="text-blue-200 text-sm leading-relaxed">
+                  💡 <strong>Tip:</strong> You can edit your profile to make it more accurate. This will be used to find movies for you.
+                </p>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Favorite genres */}
                 <div className="bg-gray-800 rounded-xl p-4">
