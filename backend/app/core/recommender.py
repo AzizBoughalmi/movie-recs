@@ -4,7 +4,7 @@ from app.services.ai_service import ai_service
 from app.services.tmdb_service import tmdb_service
 
 class MovieRecommender:
-    """Classe responsable de la génération de recommandations de films"""
+    """Class responsible for generating movie recommendations"""
     
     def __init__(self):
         self.ai_service = ai_service
@@ -12,13 +12,13 @@ class MovieRecommender:
     
     def _convert_agent_movies_to_movies(self, agent_movies: AgentMovies) -> Movies:
         """
-        Convertit les films de l'agent en films enrichis avec les posters TMDB
+        Converts agent movies to enriched movies with TMDB posters
         
         Args:
-            agent_movies: Résultats de l'agent sans posters
+            agent_movies: Agent results without posters
         
         Returns:
-            Movies: Films enrichis avec les posters TMDB
+            Movies: Movies enriched with TMDB posters
         """
         enriched_movies = []
         
@@ -42,78 +42,78 @@ class MovieRecommender:
     
     def get_recommendations_from_profile(self, user_profile: Profile, query: str | None = None) -> Movies:
         """
-        Génère des recommandations de films basées sur un profil utilisateur
+        Generates movie recommendations based on a user profile
         
         Args:
-            user_profile: Profil cinématographique de l'utilisateur
-            query: Requête optionnelle pour personnaliser la recherche
+            user_profile: User's cinematic profile
+            query: Optional query to customize the search
         
         Returns:
-            Movies: Films recommandés avec posters
+            Movies: Recommended movies with posters
         """
-        # Utiliser le service AI pour créer l'agent
+        # Use AI service to create the agent
         agent = self.ai_service.create_recommendation_agent(AgentMovies)
         
-        # Construire la requête basée sur le profil
+        # Build the query based on the profile
         profile_summary = f"""
-Profil :
-- Films déjà vus : {', '.join(user_profile.movies_watched) if user_profile.favorite_genres else 'Non spécifiés'}
-- Genres favoris : {', '.join(user_profile.favorite_genres) if user_profile.favorite_genres else 'Non spécifiés'}
-- Réalisateurs favoris : {', '.join(user_profile.favorite_directors) if user_profile.favorite_directors else 'Non spécifiés'}
-- Acteurs favoris : {', '.join(user_profile.favorite_actors) if user_profile.favorite_actors else 'Non spécifiés'}
-- Décennies préférées : {', '.join(user_profile.preferred_decades) if user_profile.preferred_decades else 'Non spécifiées'}
-- Préférences cinématographiques : {user_profile.movie_preferences}
-- Traits de personnalité : {user_profile.personality_traits}
-- Description du goût : {user_profile.cinematic_taste_description}
-- Genres à explorer : {', '.join(user_profile.recommended_genres_to_explore) if user_profile.recommended_genres_to_explore else 'Non spécifiés'}
-- Préférences d'ambiance : {', '.join(user_profile.viewing_mood_preferences) if user_profile.viewing_mood_preferences else 'Non spécifiées'}
+Profile:
+- Movies watched: {', '.join(user_profile.movies_watched) if user_profile.favorite_genres else 'Not specified'}
+- Favorite genres: {', '.join(user_profile.favorite_genres) if user_profile.favorite_genres else 'Not specified'}
+- Favorite directors: {', '.join(user_profile.favorite_directors) if user_profile.favorite_directors else 'Not specified'}
+- Favorite actors: {', '.join(user_profile.favorite_actors) if user_profile.favorite_actors else 'Not specified'}
+- Preferred decades: {', '.join(user_profile.preferred_decades) if user_profile.preferred_decades else 'Not specified'}
+- Movie preferences: {user_profile.movie_preferences}
+- Personality traits: {user_profile.personality_traits}
+- Taste description: {user_profile.cinematic_taste_description}
+- Genres to explore: {', '.join(user_profile.recommended_genres_to_explore) if user_profile.recommended_genres_to_explore else 'Not specified'}
+- Mood preferences: {', '.join(user_profile.viewing_mood_preferences) if user_profile.viewing_mood_preferences else 'Not specified'}
 """
         
         if query:
-            user_query = f"{profile_summary}\n\nRequête spécifique : {query}\n\nBasé sur ce profil détaillé, recommande des films parfaitement adaptés."
+            user_query = f"{profile_summary}\n\nSpecific query: {query}\n\nBased on this detailed profile, recommend perfectly suited movies."
         else:
-            user_query = f"{profile_summary}\n\nBasé sur ce profil cinématographique détaillé, recommande des films qui correspondent parfaitement aux goûts et à la personnalité de cet utilisateur."
+            user_query = f"{profile_summary}\n\nBased on this detailed cinematic profile, recommend movies that perfectly match this user's tastes and personality."
         
-        # Lancer l'agent et récupérer les résultats
+        # Run the agent and retrieve results
         result = agent.run_sync(user_query)
         
-        # Convertir et enrichir avec les posters TMDB
+        # Convert and enrich with TMDB posters
         return self._convert_agent_movies_to_movies(result.output)
     
     def get_recommendations_legacy(self, liked_movies: list[str], query: str | None = None) -> Movies:
         """
-        Méthode de compatibilité pour l'ancienne approche basée sur une liste de films
+        Compatibility method for the old approach based on a movie list
         
         Args:
-            liked_movies: Liste des films aimés par l'utilisateur
-            query: Requête optionnelle
+            liked_movies: List of movies liked by the user
+            query: Optional query
         
         Returns:
-            Movies: Films recommandés avec posters
+            Movies: Recommended movies with posters
         """
-        # Utiliser le service AI pour créer l'agent legacy
+        # Use AI service to create the legacy agent
         agent = self.ai_service.create_legacy_recommendation_agent(AgentMovies)
         
-        # Construire la requête
+        # Build the query
         if query:
-            user_query = f"Voici les films que j'aime : {', '.join(liked_movies)}. {query}"
+            user_query = f"Here are the movies I like: {', '.join(liked_movies)}. {query}"
         else:
-            user_query = f"Voici les films que j'aime : {', '.join(liked_movies)}. Peux-tu me suggérer des films similaires ?"
+            user_query = f"Here are the movies I like: {', '.join(liked_movies)}. Can you suggest similar movies?"
         
-        # Lancer l'agent et récupérer les résultats
+        # Run the agent and retrieve results
         result = agent.run_sync(user_query)
         
-        # Convertir et enrichir avec les posters TMDB
+        # Convert and enrich with TMDB posters
         return self._convert_agent_movies_to_movies(result.output)
 
-# Instance globale du recommandeur
+# Global instance of the recommender
 movie_recommender = MovieRecommender()
 
-# Fonctions pour compatibilité avec l'ancien code
+# Functions for compatibility with old code
 def get_movie_recommendations_from_profile(user_profile: Profile, query: str | None = None) -> Movies:
-    """Fonction de compatibilité pour l'ancien code"""
+    """Compatibility function for old code"""
     return movie_recommender.get_recommendations_from_profile(user_profile, query)
 
 def get_movie_recommendations(liked_movies: list[str], query: str | None = None) -> Movies:
-    """Fonction de compatibilité pour l'ancien code (DEPRECATED)"""
+    """Compatibility function for old code (DEPRECATED)"""
     return movie_recommender.get_recommendations_legacy(liked_movies, query)

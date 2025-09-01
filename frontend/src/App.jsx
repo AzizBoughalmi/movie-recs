@@ -18,44 +18,44 @@ function App() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   
-  // Référence pour le scroll automatique vers les recommandations
+  // Reference for automatic scroll to recommendations
   const recommendationsRef = useRef(null);
   const profileRef = useRef(null);
 
-  // Effet pour détecter les changements dans la liste des favoris
-  // et réinitialiser le profil pour faire réapparaître le bouton "Créer mon profil"
+  // Effect to detect changes in the favorites list
+  // and reset the profile to make the "Create my profile" button reappear
   useEffect(() => {
-    // Si un profil existe et que la liste des favoris change, on réinitialise le profil
+    // If a profile exists and the favorites list changes, reset the profile
     if (userProfile) {
       setUserProfile(null);
-      setRecommendations([]); // Effacer aussi les recommandations précédentes
+      setRecommendations([]); // Also clear previous recommendations
     }
-  }, [favorites.length]); // Se déclenche quand le nombre de favoris change
+  }, [favorites.length]); // Triggers when the number of favorites changes
 
-  // Effet pour vérifier s'il existe des profils dans la session au chargement de la page
+  // Effect to check if profiles exist in the session when the page loads
   useEffect(() => {
     const checkForExistingProfiles = async () => {
       try {
         const res = await axios.get(config.getApiUrl('profile/list'));
         
         if (res.data.profiles && res.data.profiles.length > 0) {
-          // Récupérer le profil le plus récent (dernier dans la liste)
+          // Get the most recent profile (last in the list)
           const latestProfileData = res.data.profiles[res.data.profiles.length - 1];
           
-          // Définir le profil et l'ID du profil
+          // Set the profile and profile ID
           setUserProfile(latestProfileData.profile);
           setProfileId(latestProfileData.profile_id);
           
-          console.log("Profil restauré depuis la session:", latestProfileData.profile_id);
+          console.log("Profile restored from session:", latestProfileData.profile_id);
         }
       } catch (err) {
-        console.log("Aucun profil existant trouvé ou erreur:", err);
-        // C'est normal pour les nouveaux utilisateurs, donc on n'affiche pas d'erreur
+        console.log("No existing profile found or error:", err);
+        // This is normal for new users, so we don't display an error
       }
     };
     
     checkForExistingProfiles();
-  }, []); // Tableau de dépendances vide = s'exécute une seule fois au montage
+  }, []); // Empty dependency array = runs only once on mount
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -66,7 +66,7 @@ function App() {
       });
       setResults(res.data);
     } catch (err) {
-      console.error("Erreur lors de la recherche :", err);
+      console.error("Error during search:", err);
     }
   };
 
@@ -80,12 +80,12 @@ function App() {
     setFavorites(favorites.filter(f => f.id !== movieId));
   };
 
-  // Fonction utilitaire pour vérifier si un film est dans les favoris
+  // Utility function to check if a movie is in favorites
   const isInFavorites = (movie) => {
     return favorites.some(f => f.id === movie.id);
   };
 
-  // Fonction utilitaire pour obtenir les classes CSS conditionnelles
+  // Utility function to get conditional CSS classes
   const getMovieCardClasses = (movie) => {
     const baseClasses = "bg-gray-800 rounded-2xl p-4 shadow-md hover:shadow-lg transition ease-in-out duration-300 transform hover:scale-105";
     const favoriteClasses = "opacity-60 bg-gray-700 border-2 border-teal-500";
@@ -93,17 +93,17 @@ function App() {
     return isInFavorites(movie) ? `${baseClasses} ${favoriteClasses}` : baseClasses;
   };
 
-  // Fonction utilitaire pour obtenir le texte et les classes du bouton
+  // Utility function to get button text and classes
   const getButtonProps = (movie) => {
     if (isInFavorites(movie)) {
       return {
-        text: "✅ Déjà ajouté",
+        text: "✅ Already added",
         classes: "w-full px-4 py-2 bg-gray-600 text-gray-400 font-medium rounded-xl cursor-not-allowed",
         disabled: true
       };
     }
     return {
-      text: "➕ Ajouter aux favoris",
+      text: "➕ Add to favorites",
       classes: "w-full px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white font-medium rounded-xl transition ease-in-out duration-300",
       disabled: false
     };
@@ -111,7 +111,7 @@ function App() {
 
   const createProfile = async () => {
     if (favorites.length === 0) {
-      alert("Ajoutez d'abord des films à vos favoris !");
+      alert("Add movies to your favorites first!");
       return;
     }
 
@@ -122,15 +122,15 @@ function App() {
         favorite_movies: favoriteTitles
       });
       
-      // Le backend retourne maintenant {profile_id, profile}
+      // The backend now returns {profile_id, profile}
       setProfileId(res.data.profile_id);
       setUserProfile(res.data.profile);
       
-      // Effacer les résultats de recherche précédents et le champ de recherche
+      // Clear previous search results and search field
       setResults([]);
       setQuery("");
       
-      // Scroll automatique vers le profil après un petit délai
+      // Automatic scroll to profile after a short delay
       setTimeout(() => {
         profileRef.current?.scrollIntoView({ 
           behavior: 'smooth',
@@ -138,8 +138,8 @@ function App() {
         });
       }, 100);
     } catch (err) {
-      console.error("Erreur lors de la création du profil :", err);
-      alert("Erreur lors de la création du profil");
+      console.error("Error creating profile:", err);
+      alert("Error creating profile");
     } finally {
       setProfileLoading(false);
     }
@@ -147,7 +147,7 @@ function App() {
 
   const getRecommendationsFromProfile = async () => {
     if (!userProfile) {
-      alert("Créez d'abord votre profil !");
+      alert("Create your profile first!");
       return;
     }
 
@@ -161,7 +161,7 @@ function App() {
       const newRecommendations = res.data.movies || [];
       setRecommendations(newRecommendations);
       
-      // Scroll automatique vers les recommandations après un petit délai
+      // Automatic scroll to recommendations after a short delay
       if (newRecommendations.length > 0) {
         setTimeout(() => {
           recommendationsRef.current?.scrollIntoView({ 
@@ -171,8 +171,8 @@ function App() {
         }, 100);
       }
     } catch (err) {
-      console.error("Erreur lors de la génération des recommandations :", err);
-      alert("Erreur lors de la génération des recommandations");
+      console.error("Error generating recommendations:", err);
+      alert("Error generating recommendations");
     } finally {
       setLoading(false);
     }
@@ -184,7 +184,7 @@ function App() {
     }
   };
 
-  // Fonctions pour l'édition du profil
+  // Functions for profile editing
   const startEditing = () => {
     setEditedProfile({ ...userProfile });
     setIsEditing(true);
@@ -206,17 +206,17 @@ function App() {
         setUserProfile(editedProfile);
         setIsEditing(false);
         setEditedProfile(null);
-        alert("Profil mis à jour avec succès !");
+        alert("Profile updated successfully!");
       }
     } catch (err) {
-      console.error("Erreur lors de la sauvegarde du profil :", err);
-      alert("Erreur lors de la sauvegarde du profil");
+      console.error("Error saving profile:", err);
+      alert("Error saving profile");
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Fonctions pour modifier les champs du profil
+  // Functions to modify profile fields
   const updateProfileField = (field, value) => {
     setEditedProfile(prev => ({
       ...prev,
@@ -245,14 +245,14 @@ function App() {
       <header className="bg-gray-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-4xl font-bold text-white text-center mb-8">
-            🎬 <span className="text-teal-400">Movie Recs</span>
+            🎬 <span className="text-teal-400">AI Cinephile - AI-Powered Movie Recommendations</span>
           </h1>
           
           {/* Search Section */}
           <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
             <input
               type="text"
-              placeholder="Rechercher un film ou une série..."
+              placeholder="Search for a movie or series..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -262,20 +262,20 @@ function App() {
               onClick={handleSearch}
               className="px-6 py-3 bg-teal-500 hover:bg-teal-400 text-white font-semibold rounded-2xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
             >
-              🔍 Rechercher
+              🔍 Search
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Layout en deux colonnes sur desktop, vertical sur mobile */}
+        {/* Two-column layout on desktop, vertical on mobile */}
         <div className="flex flex-col lg:flex-row lg:gap-8 mb-12">
-          {/* Colonne principale - Résultats de recherche */}
+          {/* Main column - Search results */}
           <div className="flex-1 lg:w-2/3">
             {results.length > 0 && (
               <section className="mb-8 lg:mb-0">
-                <h2 className="text-2xl font-semibold text-white mb-6">Résultats de recherche</h2>
+                <h2 className="text-2xl font-semibold text-white mb-6">Search Results</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {results.map((item) => {
                     const buttonProps = getButtonProps(item);
@@ -295,7 +295,7 @@ function App() {
                           {item.title || item.name}
                         </h4>
                         <p className={`mb-4 ${isInFavorites(item) ? 'text-gray-500' : 'text-indigo-400'}`}>
-                          {item.media_type === "movie" ? "🎥 Film" : "📺 Série"}
+                          {item.media_type === "movie" ? "🎥 Movie" : "📺 Series"}
                         </p>
                         <button
                           onClick={() => !buttonProps.disabled && addToFavorites(item)}
@@ -312,13 +312,13 @@ function App() {
             )}
           </div>
 
-          {/* Colonne sidebar - Favoris (ne s'affiche que s'il y a des favoris) */}
+          {/* Sidebar column - Favorites (only shows if there are favorites) */}
           {favorites.length > 0 && (
             <div className="lg:w-1/3 lg:min-w-0">
               <section className="lg:sticky lg:top-8">
                 <div className="flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start sm:justify-between lg:justify-start mb-6">
                   <h2 className="text-2xl font-semibold text-white mb-4 sm:mb-0 lg:mb-4">
-                    Favoris 
+                    Favorites 
                     <span className="ml-2 px-3 py-1 bg-teal-500 text-white text-sm font-medium rounded-full">
                       {favorites.length}
                     </span>
@@ -334,7 +334,7 @@ function App() {
                           : "bg-purple-500 hover:bg-purple-400 text-white transform hover:scale-105"
                       }`}
                     >
-                      {profileLoading ? "⏳ Création..." : "👤 Créer mon profil"}
+                      {profileLoading ? "⏳ Creating..." : "👤 Create my profile"}
                     </button>
                   ) : (
                     <button
@@ -346,7 +346,7 @@ function App() {
                           : "bg-teal-500 hover:bg-teal-400 text-white transform hover:scale-105"
                       }`}
                     >
-                      {loading ? "⏳ Génération..." : "🎯 Obtenir des recommandations"}
+                      {loading ? "⏳ Generating..." : "🎯 Get recommendations"}
                     </button>
                   )}
                 </div>
@@ -370,13 +370,13 @@ function App() {
                             {fav.title || fav.name}
                           </h4>
                           <p className="text-indigo-400 mb-3 text-sm lg:text-base">
-                            {fav.media_type === "movie" ? "🎥 Film" : "📺 Série"}
+                            {fav.media_type === "movie" ? "🎥 Movie" : "📺 Series"}
                           </p>
                           <button
                             onClick={() => removeFromFavorites(fav.id)}
                             className="w-full px-3 py-2 bg-red-500 hover:bg-red-400 text-white font-medium rounded-xl transition ease-in-out duration-300 text-sm lg:text-base"
                           >
-                            ❌ Retirer
+                            ❌ Remove
                           </button>
                         </div>
                       </div>
@@ -393,7 +393,7 @@ function App() {
           <section ref={profileRef} className="mb-12">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-white">
-                👤 <span className="text-purple-400">Votre Profil Cinématographique</span>
+                👤 <span className="text-purple-400">Your Cinematic Profile</span>
               </h2>
               
               {!isEditing ? (
@@ -401,7 +401,7 @@ function App() {
                   onClick={startEditing}
                   className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
                 >
-                  ✏️ Modifier
+                  ✏️ Edit
                 </button>
               ) : (
                 <div className="flex gap-3">
@@ -414,22 +414,22 @@ function App() {
                         : "bg-green-500 hover:bg-green-400 text-white transform hover:scale-105"
                     }`}
                   >
-                    {saveLoading ? "⏳ Sauvegarde..." : "💾 Sauvegarder"}
+                    {saveLoading ? "⏳ Saving..." : "💾 Save"}
                   </button>
                   <button
                     onClick={cancelEditing}
                     className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white font-medium rounded-xl transition ease-in-out duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    ❌ Annuler
+                    ❌ Cancel
                   </button>
                 </div>
               )}
             </div>
             <div className="bg-gradient-to-br from-purple-900 to-gray-800 border-2 border-purple-400 rounded-2xl p-8 shadow-lg">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Genres favoris */}
+                {/* Favorite genres */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎬 Genres favoris</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎬 Favorite genres</h3>
                   {!isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {userProfile.favorite_genres?.map((genre, index) => (
@@ -456,7 +456,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter un genre..."
+                          placeholder="Add a genre..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -480,9 +480,9 @@ function App() {
                   )}
                 </div>
 
-                {/* Réalisateurs favoris */}
+                {/* Favorite directors */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎥 Réalisateurs favoris</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎥 Favorite directors</h3>
                   {!isEditing ? (
                     <div className="space-y-1">
                       {userProfile.favorite_directors?.slice(0, 5).map((director, index) => (
@@ -507,7 +507,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter un réalisateur..."
+                          placeholder="Add a director..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -531,9 +531,9 @@ function App() {
                   )}
                 </div>
 
-                {/* Acteurs favoris */}
+                {/* Favorite actors */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">⭐ Acteurs favoris</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">⭐ Favorite actors</h3>
                   {!isEditing ? (
                     <div className="space-y-1">
                       {userProfile.favorite_actors?.slice(0, 5).map((actor, index) => (
@@ -558,7 +558,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter un acteur..."
+                          placeholder="Add an actor..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -582,9 +582,9 @@ function App() {
                   )}
                 </div>
 
-                {/* Décennies préférées */}
+                {/* Preferred decades */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">📅 Décennies préférées</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">📅 Preferred decades</h3>
                   {!isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {userProfile.preferred_decades?.map((decade, index) => (
@@ -611,7 +611,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter une décennie (ex: 1990s)..."
+                          placeholder="Add a decade (e.g. 1990s)..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -635,9 +635,9 @@ function App() {
                   )}
                 </div>
 
-                {/* Préférences d'ambiance */}
+                {/* Mood preferences */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🌙 Ambiances préférées</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🌙 Preferred moods</h3>
                   {!isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {userProfile.viewing_mood_preferences?.map((mood, index) => (
@@ -664,7 +664,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter une ambiance..."
+                          placeholder="Add a mood..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -688,9 +688,9 @@ function App() {
                   )}
                 </div>
 
-                {/* Genres à explorer */}
+                {/* Genres to explore */}
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🔍 Genres à explorer</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🔍 Genres to explore</h3>
                   {!isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {userProfile.recommended_genres_to_explore?.map((genre, index) => (
@@ -717,7 +717,7 @@ function App() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Ajouter un genre à explorer..."
+                          placeholder="Add a genre to explore..."
                           className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -742,17 +742,17 @@ function App() {
                 </div>
               </div>
 
-              {/* Description du goût cinématographique */}
+              {/* Cinematic taste description */}
               {(userProfile.cinematic_taste_description || isEditing) && (
                 <div className="mt-6 bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎨 Votre goût cinématographique</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🎨 Your cinematic taste</h3>
                   {!isEditing ? (
                     <p className="text-gray-300 leading-relaxed">{userProfile.cinematic_taste_description}</p>
                   ) : (
                     <textarea
                       value={editedProfile.cinematic_taste_description || ''}
                       onChange={(e) => updateProfileField('cinematic_taste_description', e.target.value)}
-                      placeholder="Décrivez votre goût cinématographique..."
+                      placeholder="Describe your cinematic taste..."
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                       rows="4"
                     />
@@ -760,17 +760,17 @@ function App() {
                 </div>
               )}
 
-              {/* Préférences cinématographiques */}
+              {/* Movie preferences */}
               {(userProfile.movie_preferences || isEditing) && (
                 <div className="mt-4 bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">💭 Vos préférences</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">💭 Your preferences</h3>
                   {!isEditing ? (
                     <p className="text-gray-300 leading-relaxed">{userProfile.movie_preferences}</p>
                   ) : (
                     <textarea
                       value={editedProfile.movie_preferences || ''}
                       onChange={(e) => updateProfileField('movie_preferences', e.target.value)}
-                      placeholder="Décrivez vos préférences cinématographiques..."
+                      placeholder="Describe your movie preferences..."
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                       rows="4"
                     />
@@ -778,17 +778,17 @@ function App() {
                 </div>
               )}
 
-              {/* Traits de personnalité */}
+              {/* Personality traits */}
               {(userProfile.personality_traits || isEditing) && (
                 <div className="mt-4 bg-gray-800 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🧠 Traits de personnalité</h3>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">🧠 Personality traits</h3>
                   {!isEditing ? (
                     <p className="text-gray-300 leading-relaxed">{userProfile.personality_traits}</p>
                   ) : (
                     <textarea
                       value={editedProfile.personality_traits || ''}
                       onChange={(e) => updateProfileField('personality_traits', e.target.value)}
-                      placeholder="Décrivez vos traits de personnalité liés au cinéma..."
+                      placeholder="Describe your personality traits related to cinema..."
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                       rows="4"
                     />
@@ -803,7 +803,7 @@ function App() {
         {recommendations.length > 0 && (
           <section ref={recommendationsRef}>
             <h2 className="text-2xl font-semibold text-white mb-6">
-              🎯 <span className="text-teal-400">Recommandations pour vous</span>
+              🎯 <span className="text-teal-400">Recommendations for you</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {recommendations.map((movie, index) => (
@@ -822,16 +822,16 @@ function App() {
                   
                   <div className="space-y-2 text-sm">
                     {movie.year && (
-                      <p><span className="text-teal-400 font-semibold">Année:</span> <span className="text-gray-300">{movie.year}</span></p>
+                      <p><span className="text-teal-400 font-semibold">Year:</span> <span className="text-gray-300">{movie.year}</span></p>
                     )}
                     {movie.genre && (
                       <p><span className="text-teal-400 font-semibold">Genre:</span> <span className="text-gray-300">{movie.genre}</span></p>
                     )}
                     {movie.director && (
-                      <p><span className="text-teal-400 font-semibold">Réalisateur:</span> <span className="text-gray-300">{movie.director}</span></p>
+                      <p><span className="text-teal-400 font-semibold">Director:</span> <span className="text-gray-300">{movie.director}</span></p>
                     )}
                     {movie.rating && (
-                      <p><span className="text-teal-400 font-semibold">Note:</span> <span className="text-amber-400">{movie.rating}</span></p>
+                      <p><span className="text-teal-400 font-semibold">Rating:</span> <span className="text-amber-400">{movie.rating}</span></p>
                     )}
                     {movie.cast && movie.cast.length > 0 && (
                       <p><span className="text-teal-400 font-semibold">Cast:</span> <span className="text-gray-300">{movie.cast.join(", ")}</span></p>
@@ -846,7 +846,7 @@ function App() {
                   )}
 
                   <div className="mt-4 p-4 bg-gray-900 rounded-xl">
-                    <p className="text-teal-400 font-semibold mb-2">Pourquoi recommandé:</p>
+                    <p className="text-teal-400 font-semibold mb-2">Why recommended:</p>
                     <p className="text-gray-300 text-sm leading-relaxed">{movie.why_recommended}</p>
                   </div>
                 </div>

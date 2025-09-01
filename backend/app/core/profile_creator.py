@@ -2,47 +2,47 @@ from app.models.profile import Profile
 from app.services.ai_service import ai_service
 
 class ProfileCreator:
-    """Classe responsable de la création de profils utilisateur"""
+    """Class responsible for user profile creation"""
     
     def __init__(self):
         self.ai_service = ai_service
     
     def create_user_profile(self, favorite_movies: list[str], ) -> Profile:
         """
-        Analyse les films favoris de l'utilisateur pour créer un profil cinématographique détaillé
+        Analyzes user's favorite movies to create a detailed cinematic profile
         
         Args:
-            favorite_movies: Liste des titres de films favoris de l'utilisateur
+            favorite_movies: List of user's favorite movie titles
 
         
         Returns:
-            Profile: Profil cinématographique détaillé de l'utilisateur
+            Profile: Detailed cinematic profile of the user
         """
-        # Utiliser le service AI pour créer l'agent
+        # Use AI service to create the agent
         profile_agent = self.ai_service.create_profile_agent(Profile)
         
-        # Construire la requête d'analyse
-        user_query = f"""Analyse mes films favoris de pour créer mon profil cinématographique : {', '.join(favorite_movies)}.
+        # Build the analysis query
+        user_query = f"""Analyze my favorite movies to create my cinematic profile: {', '.join(favorite_movies)}.
         
-        Crée un profil détaillé qui inclut :
-        - Les genres préférés
-        - Les réalisateurs et acteurs favoris
-        - Les décennies/époques préférées
-        - Une analyse de ses préférences cinématographiques
-        - Des traits de personnalité déduits de ses choix
-        - Une description narrative de son goût cinématographique
-        - Des genres recommandés à explorer
-        - Ses préférences d'ambiance de visionnage
+        Create a detailed profile that includes:
+        - Favorite genres
+        - Favorite directors and actors
+        - Preferred decades/eras
+        - Analysis of cinematic preferences
+        - Personality traits deduced from choices
+        - Narrative description of cinematic taste
+        - Recommended genres to explore
+        - Viewing mood preferences
         """
         
-        # Lancer l'agent et récupérer le profil
+        # Run the agent and retrieve the profile
         result = profile_agent.run_sync(user_query)
         return result.output
 
-# Instance globale du créateur de profils
+# Global instance of the profile creator
 profile_creator = ProfileCreator()
 
-# Fonction pour compatibilité avec l'ancien code
+# Function for compatibility with old code
 def create_user_profile(favorite_movies: list[str] ) -> Profile:
-    """Fonction de compatibilité pour l'ancien code"""
+    """Compatibility function for old code"""
     return profile_creator.create_user_profile(favorite_movies)

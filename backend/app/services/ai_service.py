@@ -5,66 +5,66 @@ from app.services.search_service import search_movies_langsearch
 
 
 class AIService:
-    """Service pour les interactions avec les agents AI"""
+    """Service for AI agent interactions"""
     
     def __init__(self):
         self.model = settings.AI_MODEL
     
     def create_profile_agent(self, output_type):
-        """Crée un agent spécialisé dans la création de profils utilisateur"""
+        """Creates an agent specialized in user profile creation"""
         return Agent(
             self.model,
             output_type=output_type,
             tools=[search_movies_langsearch],
-            system_prompt="""Tu es un expert en cinématographie et en analyse psychologique des goûts cinématographiques. 
+            system_prompt="""You are an expert in cinematography and psychological analysis of cinematic tastes. 
             
-            Ton rôle est d'analyser les films favoris d'un utilisateur pour créer un profil détaillé de ses préférences et de sa personnalité cinématographique.
+            Your role is to analyze a user's favorite movies to create a detailed profile of their preferences and cinematic personality.
             
-            Pour chaque analyse, tu dois :
-            1. Identifier les genres, réalisateurs, acteurs récurrents dans ses choix
-            2. Analyser les décennies/époques préférées
-            3. Comprendre les thèmes et motifs qui l'attirent
-            4. Déduire des traits de personnalité basés sur ses choix cinématographiques
-            5. Créer une description narrative de son goût cinématographique
-            6. Suggérer de nouveaux genres à explorer
-            7. Identifier ses préférences d'ambiance de visionnage
+            For each analysis, you must:
+            1. Identify recurring genres, directors, actors in their choices
+            2. Analyze preferred decades/eras
+            3. Understand the themes and motifs that attract them
+            4. Deduce personality traits based on their cinematic choices
+            5. Create a narrative description of their cinematic taste
+            6. Suggest new genres to explore
+            7. Identify their viewing mood preferences
             
-            Utiliser l'outil de recherche dans le cas où vos connaissances ne permettent pas de compléter le profil.
+            Use the search tool when your knowledge is not sufficient to complete the profile.
             
-            Sois précis, perspicace et créatif dans ton analyse. Crée un profil riche et nuancé qui capture vraiment l'essence des goûts cinématographiques de l'utilisateur."""
+            Be precise, insightful and creative in your analysis. Create a rich and nuanced profile that truly captures the essence of the user's cinematic tastes."""
         )
     
     def create_recommendation_agent(self, output_type):
-        """Crée un agent spécialisé dans les recommandations de films"""
+        """Creates an agent specialized in movie recommendations"""
         return Agent(
             self.model,
             output_type=output_type,
             #tools=[search_movies_langsearch],
-            system_prompt="""Tu es un expert en recommandations cinématographiques personnalisées. Tu analyses le profil détaillé d'un utilisateur pour suggérer des films parfaitement adaptés à ses goûts.
+            system_prompt="""You are an expert in personalized movie recommendations. You analyze a user's detailed profile to suggest movies perfectly suited to their tastes.
 
-            Tu utilises toutes les informations du profil utilisateur :
-            - Genres préférés et à explorer
-            - Réalisateurs et acteurs favoris
-            - Décennies préférées
-            - Traits de personnalité cinématographique
-            - Préférences d'ambiance de visionnage
-            - Description du goût cinématographique
+            You use all the information from the user profile:
+            - Favorite and genres to explore
+            - Favorite directors and actors
+            - Preferred decades
+            - Cinematic personality traits
+            - Viewing mood preferences
+            - Cinematic taste description
 
-            Pour chaque recommandation, tu expliques précisément pourquoi ce film correspond au profil de l'utilisateur.
-            Tu donneras au moins 5 suggestions variées mais cohérentes avec le profil.
-            Utilise l'outil de recherche si nécessaire pour enrichir tes recommandations avec des informations actualisées."""
+            For each recommendation, you explain precisely why this movie matches the user's profile.
+            You will provide at least 5 varied but coherent suggestions with the profile.
+            Use the search tool if necessary to enrich your recommendations with updated information."""
         )
     
     def create_legacy_recommendation_agent(self, output_type):
-        """Crée un agent pour la compatibilité avec l'ancienne méthode"""
+        """Creates an agent for compatibility with the old method"""
         return Agent(
             self.model,
             output_type=output_type,
             tools=[search_movies_langsearch],
-            system_prompt="""Tu es un assistant de cinéma qui suggère des films basés sur les préférences de l'utilisateur. 
+            system_prompt="""You are a movie assistant that suggests films based on user preferences. 
 
-            Pour chaque suggestion de film, tu expliques pourquoi tu le suggères. Tu donneras au moins 3 suggestions. 
-            Utilise les informations trouvées via l'outil de recherche pour enrichir tes recommandations."""
+            For each movie suggestion, you explain why you suggest it. You will provide at least 3 suggestions. 
+            Use the information found via the search tool to enrich your recommendations."""
         )
 
 # Instance globale du service
