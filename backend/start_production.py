@@ -28,12 +28,12 @@ def main():
         "app": "app.main:app",  # FastAPI app location
         "host": "0.0.0.0",      # Listen on all interfaces
         "port": "8000",         # Default port
-        "workers": "4",         # Number of worker processes
+        "workers": "1",         # Number of worker processes
         "worker_class": "uvicorn.workers.UvicornWorker",  # Use Uvicorn workers for async support
         "timeout": "120",       # Worker timeout
         "keepalive": "5",       # Keep-alive timeout
-        "max_requests": "1000", # Restart workers after handling this many requests
-        "max_requests_jitter": "100",  # Add randomness to max_requests
+        "max_requests": "100", # Restart workers after handling this many requests
+        "max_requests_jitter": "20",  # Add randomness to max_requests
         "preload_app": True,    # Preload the application for better performance
         "access_logfile": "-",  # Log to stdout
         "error_logfile": "-",   # Log errors to stderr
