@@ -37,7 +37,7 @@ class Settings:
     LANGSEARCH_ENDPOINT = "https://api.langsearch.com/v1/web-search"
     
     # AI Model Configuration
-    AI_MODEL = 'gemini-2.0-flash'
+    AI_MODEL = 'gemini-3-flash-preview'
     
     # Default values
     DEFAULT_SEARCH_COUNT = 5
