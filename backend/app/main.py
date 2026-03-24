@@ -74,12 +74,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Force le chemin vers le .env
+# Load environment variables
+# On Heroku, these come from Config Vars
+# Locally, they come from .env file
 env_path = Path(__file__).parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    logger.info(f"✅ Loaded environment from {env_path}")
+else:
+    load_dotenv()  # Load from system environment / Heroku Config Vars
+    logger.info("✅ Using system environment variables (Heroku Config Vars)")
 
 TMDB_API_KEY = settings.TMDB_API_KEY
 TMDB_BASE_URL = settings.TMDB_BASE_URL
+
+# Log API configuration (without showing the key itself)
+logger.info(f"🔧 TMDB API Configuration: BASE_URL={TMDB_BASE_URL}, API_KEY={'set' if TMDB_API_KEY else 'NOT SET'}")
 
 # Mount built React frontend as static files with SPA fallback
 frontend_dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
@@ -95,10 +105,25 @@ else:
 def ping():
     return {"message": "pong"}
 
+@app.get("/debug/config")
+def debug_config():
+    """Debug endpoint to check API configuration"""
+    return {
+        "tmdb_api_key_set": bool(TMDB_API_KEY),
+        "tmdb_base_url": TMDB_BASE_URL,
+        "frontend_url": settings.FRONTEND_URL,
+        "cors_origins": cors_origins
+    }
+
 @app.get("/search")
 def search_movies(query: str = Query(..., min_length=1)):
     """Recherche films ou séries via TMDB"""
     logger.info(f"🔍 API CALL - /search: query='{query}'")
+    
+    # Check if API key is set
+    if not TMDB_API_KEY:
+        logger.error("❌ TMDB_API_KEY is not set!")
+        raise HTTPException(status_code=500, detail="TMDB API key not configured. Please set TMDB_API_KEY in environment variables.")
     
     url = f"{TMDB_BASE_URL}/search/multi"
     params = {
