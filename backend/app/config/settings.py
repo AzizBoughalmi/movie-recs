@@ -30,6 +30,7 @@ class Settings:
             raise ValueError("TMDB_API_KEY environment variable is required")
         if not self.GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY environment variable is required")
+        # FRONTEND_URL is optional - can be derived from deployment domain or handled with CORS when same-origin
     
     # API Endpoints
     TMDB_BASE_URL = "https://api.themoviedb.org/3"

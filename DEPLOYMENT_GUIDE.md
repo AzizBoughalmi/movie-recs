@@ -149,23 +149,124 @@ python -m gunicorn app.main:app --bind 0.0.0.0:8000 --workers 4 --worker-class u
 4. Run the production startup script
 5. Configure reverse proxy (Nginx) if needed
 
-### Option 2: Docker Deployment
-Create `Dockerfile` in backend:
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["python", "start_production.py"]
-```
+### Option 2: Docker Deployment (Multi-stage)
+A multi-stage Dockerfile is included that builds the React frontend and embeds it with the Python backend.
 
-### Option 3: Cloud Platforms
+**What it does:**
+1. Stage 1: Builds React frontend with Node.js
+2. Stage 2: Creates Python image with FastAPI, copies built frontend from Stage 1
+3. Result: Single production image serving both API and frontend
+
+The `Dockerfile` at the project root handles this automatically. No manual frontend build needed!
+
+### Option 3: Heroku Deployment with Docker (Recommended for Quick Setup)
 - **Heroku**: Use `Procfile` with gunicorn command
 - **Railway**: Direct deployment with environment variables
 - **DigitalOcean App Platform**: Configure build and run commands
 - **AWS/GCP/Azure**: Use container services or app services
+
+### Option 4: Heroku Cloud Platform with Docker
+
+#### Prerequisites
+- [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) installed
+- [Docker](https://www.docker.com/) installed
+- Git installed and project tracked with Git
+- A Heroku account
+
+#### Step-by-Step Heroku Deployment
+
+**1. Create Heroku App**
+```bash
+heroku login
+heroku create your-app-name
+heroku stack:set container
+```
+
+**2. Set Environment Variables (Secrets)**
+```bash
+heroku config:set \
+  TMDB_API_KEY=your_tmdb_key \
+  GEMINI_API_KEY=your_gemini_key \
+  LANGSEARCH_API_KEY=your_langsearch_key \
+  SECRET_KEY=your_random_secure_key
+```
+
+**3. Authenticate with Heroku Container Registry**
+```bash
+heroku container:login
+```
+
+**4. Build and Push Docker Image**
+```bash
+# Build locally and push to Heroku
+heroku container:push web
+```
+
+**5. Release the Image**
+```bash
+heroku container:release web
+```
+
+**6. Open App in Browser**
+```bash
+heroku open
+```
+
+**7. Monitor Logs (optional)**
+```bash
+heroku logs --tail
+```
+
+#### Verification Checklist
+- ✅ App URL loads frontend
+- ✅ `/ping` endpoint responds (check with `curl https://your-app.herokuapp.com/ping`)
+- ✅ Movie search works
+- ✅ Profile creation works
+- ✅ API calls from frontend complete successfully
+
+#### Important Notes
+- **No `$PORT` needed in commands** — Heroku automatically sets PORT environment variable
+- **`start_production.py` reads `$PORT`** — Uses it instead of hardcoded 8000
+- **Frontend and API on same domain** — CORS configured automatically for same-origin
+- **Environment variables in `heroku config`** — Not in `.env` files (never commit secrets!)
+- **Container image includes both frontend and backend** — Single dyno runs both
+
+#### Troubleshooting Heroku Deployment
+```bash
+# Check app status
+heroku ps
+
+# View logs
+heroku logs --tail
+
+# Run one-off dyno (debugging)
+heroku run bash
+
+# Reset app (dangerous!)
+heroku apps:destroy --app your-app-name --confirm your-app-name
+```
+
+#### Scaling on Heroku
+```bash
+# Scale to multiple dynos
+heroku ps:scale web=2
+
+# Check resource usage
+heroku metrics
+```
+
+#### Deploying Updates
+Simply repeat steps 4-5 after making code changes:
+```bash
+git add .
+git commit -m "Your changes"
+heroku container:push web
+heroku container:release web
+```
+
+---
+
+### Original Cloud Platforms (Alternative Options)
 
 ## 🔒 Security Checklist
 

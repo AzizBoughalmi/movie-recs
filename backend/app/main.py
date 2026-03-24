@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import os
 import requests
@@ -52,11 +53,22 @@ class ProfileRecommendationRequest(BaseModel):
     profile: Profile
     custom_query: Optional[str] = None
 
-# CORS
-origins = [settings.FRONTEND_URL]
+# CORS - Configure allowed origins
+# When frontend and backend are on the same domain (Heroku), FRONTEND_URL may be empty
+# In that case, allow the same origin (requests from same app domain)
+cors_origins = []
+if settings.FRONTEND_URL:
+    cors_origins = [settings.FRONTEND_URL]
+else:
+    # When FRONTEND_URL is not set, we're likely in production with same-origin serving
+    # Allow all origins as fallback (the frontend is served by this same server)
+    cors_origins = ["*"]
+
+logger.info(f"🔐 CORS Origins configured: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -68,6 +80,16 @@ load_dotenv(dotenv_path=env_path)
 
 TMDB_API_KEY = settings.TMDB_API_KEY
 TMDB_BASE_URL = settings.TMDB_BASE_URL
+
+# Mount built React frontend as static files with SPA fallback
+frontend_dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
+if frontend_dist_path.exists():
+    logger.info(f"✅ Mounting frontend static files from {frontend_dist_path}")
+    # Mount with html=True to serve index.html for unmatched routes (SPA fallback)
+    app.mount("/", StaticFiles(directory=str(frontend_dist_path), html=True), name="static")
+else:
+    logger.warning(f"⚠️ Frontend dist folder not found at {frontend_dist_path}")
+    logger.info("Frontend will not be served. (This is expected in development; build frontend with 'npm run build' in frontend/)")
 
 @app.get("/ping")
 def ping():

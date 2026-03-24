@@ -24,10 +24,11 @@ def main():
     print(f"🔧 Environment file: {env_file}")
     
     # Gunicorn configuration
+    port = os.getenv("PORT", "8000")  # Use PORT env var if set (Heroku), else default to 8000
     gunicorn_config = {
         "app": "app.main:app",  # FastAPI app location
         "host": "0.0.0.0",      # Listen on all interfaces
-        "port": "8000",         # Default port
+        "port": port,           # Port (dynamic for Heroku, fixed for local)
         "workers": "1",         # Number of worker processes
         "worker_class": "uvicorn.workers.UvicornWorker",  # Use Uvicorn workers for async support
         "timeout": "120",       # Worker timeout
