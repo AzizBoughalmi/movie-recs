@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+from dotenv import load_dotenv
 
 def main():
     """Start the FastAPI application with Gunicorn in production mode."""
@@ -16,43 +17,45 @@ def main():
     backend_dir = Path(__file__).parent
     os.chdir(backend_dir)
     
-    # Load environment variables from .env.production if it exists
-    env_file = ".env.production" if os.path.exists(".env.production") else ".env"
+    # Load environment variables from .env.production if it exists, otherwise .env
+    env_file = ".env.production" if Path(".env.production").exists() else ".env"
+    if Path(env_file).exists():
+        load_dotenv(env_file)
+        print(f"✅ Loaded environment from: {env_file}")
+    else:
+        print(f"⚠️  No {env_file} file found (this is OK if using Heroku Config Vars)")
     
     print(f"🚀 Starting Movie Recommendations API in production mode...")
     print(f"📁 Working directory: {backend_dir}")
-    print(f"🔧 Environment file: {env_file}")
+    
+    # Get port from environment variable (Heroku sets this), default to 8000 for local development
+    port = os.getenv("PORT", "8000")
     
     # Gunicorn configuration
-    port = os.getenv("PORT", "8000")  # Use PORT env var if set (Heroku), else default to 8000
     gunicorn_config = {
-        "app": "app.main:app",  # FastAPI app location
-        "host": "0.0.0.0",      # Listen on all interfaces
-        "port": port,           # Port (dynamic for Heroku, fixed for local)
-        "workers": "1",         # Number of worker processes
-        "worker_class": "uvicorn.workers.UvicornWorker",  # Use Uvicorn workers for async support
-        "timeout": "120",       # Worker timeout
-        "keepalive": "5",       # Keep-alive timeout
-        "max_requests": "100", # Restart workers after handling this many requests
-        "max_requests_jitter": "20",  # Add randomness to max_requests
-        "preload_app": True,    # Preload the application for better performance
-        "access_logfile": "-",  # Log to stdout
-        "error_logfile": "-",   # Log errors to stderr
+        "app": "app.main:app",
+        "bind": f"0.0.0.0:{port}",
+        "workers": 1,
+        "worker_class": "uvicorn.workers.UvicornWorker",
+        "timeout": 120,
+        "keepalive": 5,
+        "max_requests": 100,
+        "max_requests_jitter": 20,
+        "preload_app": True,
+        "access_logfile": "-",
+        "error_logfile": "-",
     }
     
     # Build the Gunicorn command
     cmd = ["python", "-m", "gunicorn"]
     
     for key, value in gunicorn_config.items():
-        if key == "app":
-            cmd.append(value)
-        else:
-            cmd.extend([f"--{key.replace('_', '-')}", value])
+        cmd.append(f"--{key.replace('_', '-')}")
+        cmd.append(str(value))
     
-    # Add environment file if specified
-    if env_file != ".env":
-        cmd.extend(["--env", f"DOTENV_PATH={env_file}"])
+    cmd.append("app.main:app")
     
+    print(f"🔧 Port: {port}")
     print(f"🔧 Command: {' '.join(cmd)}")
     print("=" * 50)
     
@@ -61,11 +64,12 @@ def main():
         subprocess.run(cmd, check=True)
     except KeyboardInterrupt:
         print("\n🛑 Server stopped by user")
+        sys.exit(0)
     except subprocess.CalledProcessError as e:
         print(f"❌ Error starting server: {e}")
         sys.exit(1)
     except FileNotFoundError:
-        print("❌ Gunicorn not found. Please install it with: pip install gunicorn")
+        print("❌ Gunicorn not found. Please install it with: pip install gunicorn uvicorn")
         sys.exit(1)
 
 if __name__ == "__main__":
